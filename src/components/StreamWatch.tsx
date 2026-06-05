@@ -127,7 +127,7 @@ export function StreamWatch() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-black ring-1 ring-border">
+      <div className="relative aspect-video min-h-[188px] overflow-hidden rounded-xl bg-black ring-1 ring-border">
         {active ? (
           <StreamEmbed stream={active} host={host} demo={demoMode} />
         ) : (

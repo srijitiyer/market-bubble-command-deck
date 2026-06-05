@@ -71,10 +71,10 @@ export function DemoStage({ stream }: { stream: StreamChannel }) {
       </div>
 
       {/* center brand with pulsing halo */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
-        <div className="relative flex h-16 w-16 items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+        <div className="relative flex h-14 w-14 items-center justify-center">
           <span
-            className="absolute h-20 w-20 rounded-full"
+            className="absolute h-[72px] w-[72px] rounded-full"
             style={{
               background:
                 "radial-gradient(circle, rgba(177,108,255,0.35), transparent 70%)",
@@ -82,15 +82,15 @@ export function DemoStage({ stream }: { stream: StreamChannel }) {
             }}
           />
           <span
-            className="relative h-16 w-16 rounded-full"
+            className="relative h-14 w-14 rounded-full"
             style={{
               background:
                 "radial-gradient(circle at 36% 30%, #f0d9ff, #c98bff 32%, #8a3df0 68%, #4a1d8f)",
-              boxShadow: "0 0 40px rgba(177,108,255,0.45)",
+              boxShadow: "0 0 36px rgba(177,108,255,0.45)",
             }}
           />
         </div>
-        <div className="mt-1 text-[13px] font-semibold text-fg">
+        <div className="text-[13px] font-semibold text-fg">
           {stream.channel}
         </div>
         <div className="flex items-center gap-1.5 text-[11px] text-dim">
