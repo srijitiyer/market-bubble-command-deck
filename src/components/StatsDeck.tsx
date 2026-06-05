@@ -144,15 +144,20 @@ export function TopChatters() {
                 >
                   {c.displayName}
                 </span>
-                <span className="relative flex w-16 items-center justify-end gap-2">
-                  <span
-                    className="absolute left-0 h-1 rounded-full opacity-40"
-                    style={{
-                      width: `${(c.count / maxCount) * 100}%`,
-                      background: meta.accent,
-                    }}
-                  />
-                  <span className="mono text-[11px] text-dim">{c.count}</span>
+                <span className="flex w-20 items-center gap-2">
+                  <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                    <span
+                      className="block h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.max(8, (c.count / maxCount) * 100)}%`,
+                        background: meta.accent,
+                        opacity: 0.55,
+                      }}
+                    />
+                  </span>
+                  <span className="mono w-4 shrink-0 text-right text-[11px] text-dim">
+                    {c.count}
+                  </span>
                 </span>
               </a>
             );
