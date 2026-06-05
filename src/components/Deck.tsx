@@ -179,10 +179,19 @@ export function Deck() {
   );
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
+    <div className="relative flex h-dvh flex-col overflow-hidden">
+      {/* fixed overlays — siblings of the stage so they aren't affected by the
+          tour's zoom transform */}
       <LandingTitle />
       <CommandPalette />
       <DemoTour />
+
+      {/* the zoomable stage (everything the tour can zoom into) */}
+      <div
+        id="deck-stage"
+        className="flex min-h-0 flex-1 flex-col"
+        style={{ transformOrigin: "0 0", willChange: "transform" }}
+      >
       <TopBar />
       <div className="relative z-10 border-b border-border bg-bg-soft/40">
         <TickerRail />
@@ -228,6 +237,7 @@ export function Deck() {
       ) : (
         <div className="relative z-10 min-h-0 flex-1 p-3">{centerMain}</div>
       )}
+      </div>
     </div>
   );
 }
