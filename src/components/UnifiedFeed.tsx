@@ -69,6 +69,10 @@ export function UnifiedFeed() {
       <div
         ref={parentRef}
         onScroll={onScroll}
+        role="log"
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Unified live chat feed"
         className="relative flex-1 overflow-y-auto"
       >
         {messages.length === 0 ? (

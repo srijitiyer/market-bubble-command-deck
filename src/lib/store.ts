@@ -17,6 +17,12 @@ import { XConnector } from "./connectors/x";
 import { startDemoStream } from "./connectors/demo";
 import { blip, unlockAudio } from "./sound";
 import { fetchTwitchMeta } from "./twitchMeta";
+import {
+  loadKickId,
+  saveKickId,
+  saveSession,
+  type PersistedChannel,
+} from "./persist";
 
 const MAX_MESSAGES = 600;
 const RATE_WINDOW_MS = 60_000;
@@ -62,6 +68,7 @@ interface DeckState {
   setActiveStream: (key: string | null) => void;
   refreshMeta: () => void;
   broadcast: (text: string) => void;
+  hydrate: (channels: PersistedChannel[], demoMode: boolean, soundOn: boolean) => void;
 }
 
 export const channelKey = (platform: Platform, channel: string) =>
@@ -142,6 +149,19 @@ const emptyByPlatform = (): Record<Platform, number> => ({
   x: 0,
 });
 
+function persist(get: () => DeckState) {
+  const s = get();
+  saveSession({
+    channels: s.channels.map((c) => ({
+      platform: c.platform,
+      channel: c.channel,
+      chatroomId: c.chatroomId,
+    })),
+    demoMode: s.demoMode,
+    soundOn: s.soundOn,
+  });
+}
+
 function makeConnector(
   platform: Platform,
   channel: string,
@@ -178,10 +198,16 @@ export const useDeck = create<DeckState>((set, get) => ({
     const key = channelKey(platform, clean);
     if (get().channels.some((c) => channelKey(c.platform, c.channel) === key))
       return;
+    // Kick: reuse a cached chatroom id, or remember a freshly-supplied one.
+    let chatroomId = opts?.chatroomId;
+    if (platform === "kick") {
+      if (chatroomId) saveKickId(clean, chatroomId);
+      else chatroomId = loadKickId(clean);
+    }
     set((s) => ({
       channels: [
         ...s.channels,
-        { platform, channel: clean, isLive: false, chatroomId: opts?.chatroomId },
+        { platform, channel: clean, isLive: false, chatroomId },
       ],
       connections: {
         ...s.connections,
@@ -195,6 +221,7 @@ export const useDeck = create<DeckState>((set, get) => ({
       activeStream: s.activeStream ?? key,
     }));
     get().connectChannel(platform, clean);
+    persist(get);
   },
 
   removeChannel: (platform, channel) => {
@@ -217,6 +244,14 @@ export const useDeck = create<DeckState>((set, get) => ({
             : s.activeStream,
       };
     });
+    persist(get);
+  },
+
+  hydrate: (channels, demoMode, soundOn) => {
+    set({ demoMode, soundOn });
+    for (const c of channels) {
+      get().addChannel(c.platform, c.channel, c.chatroomId ? { chatroomId: c.chatroomId } : undefined);
+    }
   },
 
   connectChannel: (platform, channel) => {
@@ -334,6 +369,7 @@ export const useDeck = create<DeckState>((set, get) => ({
     // reconnect every channel under the new mode
     get().disconnectAll();
     set({ demoMode: next });
+    persist(get);
     // small delay so sockets close cleanly
     setTimeout(() => get().connectAll(), 120);
   },
@@ -345,6 +381,7 @@ export const useDeck = create<DeckState>((set, get) => ({
       blip(660);
     }
     set({ soundOn: next });
+    persist(get);
   },
 
   setActiveStream: (key) => set({ activeStream: key }),

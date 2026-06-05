@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { MessageSquare } from "lucide-react";
 import { useDeck } from "@/lib/store";
+import { loadSession } from "@/lib/persist";
 import { TopBar } from "./TopBar";
 import { ChannelManager } from "./ChannelManager";
 import { StreamWatch } from "./StreamWatch";
@@ -14,6 +15,7 @@ import { SourceLegend } from "./SourceLegend";
 import { TickerRail } from "./TickerRail";
 import { SentimentMeter } from "./SentimentMeter";
 import { SharedComposer } from "./SharedComposer";
+import { LandingTitle } from "./LandingTitle";
 
 // Channels seeded on first load so the deck is alive the moment it opens.
 // Demo mode is on by default, so these run synthetic traffic; toggle Demo off
@@ -26,6 +28,7 @@ const SEED = [
 
 export function Deck() {
   const addChannel = useDeck((s) => s.addChannel);
+  const hydrate = useDeck((s) => s.hydrate);
   const channelCount = useDeck((s) => s.channels.length);
   const toggleDemo = useDeck((s) => s.toggleDemo);
   const refreshMeta = useDeck((s) => s.refreshMeta);
@@ -35,8 +38,14 @@ export function Deck() {
   useEffect(() => {
     if (seeded.current || channelCount > 0) return;
     seeded.current = true;
-    for (const s of SEED) addChannel(s.platform, s.channel);
-  }, [addChannel, channelCount]);
+    // Restore the user's last session if any; otherwise seed the demo.
+    const session = loadSession();
+    if (session && session.channels.length) {
+      hydrate(session.channels, session.demoMode, session.soundOn);
+    } else {
+      for (const s of SEED) addChannel(s.platform, s.channel);
+    }
+  }, [addChannel, hydrate, channelCount]);
 
   // Poll real Twitch stream metadata (live/viewers/title) while not in demo.
   useEffect(() => {
@@ -69,6 +78,7 @@ export function Deck() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
+      <LandingTitle />
       <TopBar />
       <div className="relative z-10 border-b border-border bg-bg-soft/40">
         <TickerRail />
