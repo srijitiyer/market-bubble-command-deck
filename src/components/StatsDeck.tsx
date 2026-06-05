@@ -11,6 +11,7 @@ import {
 import { PLATFORMS, PLATFORM_LIST } from "@/lib/types";
 import { formatNumber, profileUrl } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 function Kpi({
   label,
@@ -18,7 +19,7 @@ function Kpi({
   accent,
 }: {
   label: string;
-  value: string;
+  value: number;
   accent?: string;
 }) {
   return (
@@ -28,7 +29,7 @@ function Kpi({
         className="mono text-[19px] font-semibold leading-none tracking-tight"
         style={{ color: accent ?? "var(--color-fg)" }}
       >
-        {value}
+        <AnimatedNumber value={value} format={formatNumber} />
       </span>
     </div>
   );
@@ -55,14 +56,14 @@ export function StatsDeck() {
     <div className="flex flex-col gap-3.5">
       {/* KPI strip — no boxes, hairline-separated */}
       <div className="flex items-stretch">
-        <Kpi label="Messages" value={formatNumber(total)} />
+        <Kpi label="Messages" value={total} />
         <div className="mx-3 w-px bg-border" />
-        <Kpi label="Msgs / min" value={formatNumber(rate)} accent="var(--color-pos)" />
+        <Kpi label="Msgs / min" value={rate} accent="var(--color-pos)" />
         <div className="mx-3 w-px bg-border" />
         {totalViewers > 0 ? (
-          <Kpi label="Viewers" value={formatNumber(totalViewers)} />
+          <Kpi label="Viewers" value={totalViewers} />
         ) : (
-          <Kpi label="Feeds" value={String(liveCount)} />
+          <Kpi label="Feeds" value={liveCount} />
         )}
       </div>
 

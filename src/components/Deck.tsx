@@ -18,6 +18,7 @@ import { SentimentMeter } from "./SentimentMeter";
 import { SharedComposer } from "./SharedComposer";
 import { LandingTitle } from "./LandingTitle";
 import { FeaturedBar } from "./FeaturedBar";
+import { CommandPalette } from "./CommandPalette";
 
 // Channels seeded on first load so the deck is alive the moment it opens.
 // Demo mode is on by default, so these run synthetic traffic; toggle Demo off
@@ -87,6 +88,7 @@ export function Deck() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <LandingTitle />
+      <CommandPalette />
       <TopBar />
       <div className="relative z-10 border-b border-border bg-bg-soft/40">
         <TickerRail />

@@ -4,13 +4,14 @@ import { Sparkles, Volume2, VolumeX } from "lucide-react";
 import { useDeck, getRatePerMin } from "@/lib/store";
 import { cn, formatNumber } from "@/lib/utils";
 import { BubbleMark } from "./icons";
+import { AnimatedNumber } from "./AnimatedNumber";
 
-function StatChip({ label, value }: { label: string; value: string }) {
+function StatChip({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="eyebrow">{label}</span>
       <span className="mono text-[13px] font-semibold leading-none text-fg">
-        {value}
+        <AnimatedNumber value={value} format={formatNumber} />
       </span>
     </div>
   );
@@ -59,14 +60,24 @@ export function TopBar() {
             Live
           </span>
         </div>
-        <StatChip label="Feeds" value={String(liveCount)} />
-        <StatChip label="Msgs / min" value={formatNumber(rate)} />
-        {totalViewers > 0 && (
-          <StatChip label="Viewers" value={formatNumber(totalViewers)} />
-        )}
+        <StatChip label="Feeds" value={liveCount} />
+        <StatChip label="Msgs / min" value={rate} />
+        {totalViewers > 0 && <StatChip label="Viewers" value={totalViewers} />}
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <button
+          onClick={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+            )
+          }
+          className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-faint ring-1 ring-border transition hover:text-dim hover:ring-border-strong sm:flex"
+          title="Command palette"
+        >
+          <span>Commands</span>
+          <span className="mono rounded bg-white/5 px-1 text-[10px]">⌘K</span>
+        </button>
         <button
           onClick={toggleSound}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-faint ring-1 ring-border transition hover:text-dim hover:ring-border-strong"
