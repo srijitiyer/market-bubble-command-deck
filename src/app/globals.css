@@ -148,25 +148,27 @@ body::after {
   .text-faint {
     color: var(--color-fg-faint);
   }
-  /* micro uppercase label — the trading-terminal idiom */
-  .eyebrow {
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-fg-faint);
-  }
-  .hairline {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.09) 18%,
-      rgba(255, 255, 255, 0.09) 82%,
-      transparent
-    );
-  }
+}
+
+/* Plain CSS (outside @layer so they're never tree-shaken) ----------------- */
+/* micro uppercase label — the trading-terminal idiom */
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fg-faint);
+}
+.hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.09) 18%,
+    rgba(255, 255, 255, 0.09) 82%,
+    transparent
+  );
 }
 
 /* --- animations ---------------------------------------------------------- */

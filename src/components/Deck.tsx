@@ -88,7 +88,7 @@ export function Deck() {
         {/* Left rail — sources */}
         <aside className="panel hidden min-h-0 flex-col gap-4 overflow-y-auto p-3.5 lg:flex">
           <ChannelManager />
-          <div className="mt-auto h-px bg-border" />
+          <div className="hairline" />
           <SourceLegend />
         </aside>
 
