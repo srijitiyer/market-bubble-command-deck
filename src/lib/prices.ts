@@ -174,6 +174,67 @@ export function coingeckoUrl(id: string): string {
   return `https://www.coingecko.com/en/coins/${id}`;
 }
 
+const sparkCache = new Map<string, { row: MarketRow; ts: number }>();
+const sparkInflight = new Map<string, Promise<MarketRow | null>>();
+
+// Single-token market data (incl. sparkline) for a cashtag hovercard. Cached
+// separately from the rail so the two don't clobber each other.
+export async function getMarketForSymbol(symbol: string): Promise<MarketRow | null> {
+  const sym = symbol.toUpperCase();
+  const id = SYMBOL_TO_ID[sym];
+  if (!id) return null;
+  const c = sparkCache.get(id);
+  if (c && Date.now() - c.ts < TTL) return c.row;
+  if (sparkInflight.has(id)) return sparkInflight.get(id)!;
+  const p = (async () => {
+    try {
+      const rows = await fetchMarketsRaw([id], [sym]);
+      const row = rows[0] ?? null;
+      if (row) sparkCache.set(id, { row, ts: Date.now() });
+      return row;
+    } catch {
+      return null;
+    } finally {
+      sparkInflight.delete(id);
+    }
+  })();
+  sparkInflight.set(id, p);
+  return p;
+}
+
+async function fetchMarketsRaw(ids: string[], symbols: string[]): Promise<MarketRow[]> {
+  const url =
+    `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(
+      ",",
+    )}&sparkline=true&price_change_percentage=24h`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(String(res.status));
+  const json = (await res.json()) as Array<{
+    id: string;
+    current_price: number;
+    price_change_percentage_24h: number;
+    market_cap: number;
+    sparkline_in_7d?: { price: number[] };
+  }>;
+  const byId = new Map(json.map((r) => [r.id, r]));
+  const rows: MarketRow[] = [];
+  for (let i = 0; i < symbols.length; i++) {
+    const r = byId.get(ids[i]);
+    if (!r) continue;
+    const full = r.sparkline_in_7d?.price ?? [];
+    const step = Math.max(1, Math.floor(full.length / 28));
+    rows.push({
+      id: r.id,
+      symbol: symbols[i],
+      usd: r.current_price,
+      change24h: r.price_change_percentage_24h ?? 0,
+      marketCap: r.market_cap ?? 0,
+      spark: full.filter((_, j) => j % step === 0),
+    });
+  }
+  return rows;
+}
+
 export function formatPrice(n: number): string {
   if (n >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
   if (n >= 1) return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
