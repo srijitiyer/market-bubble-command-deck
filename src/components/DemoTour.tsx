@@ -291,12 +291,21 @@ export function DemoTour() {
       await sleep(600);
       if (cancelled) return;
 
-      // BEAT 7 — final hold
+      // BEAT 7 — glance across the deck, then the cinematic sign-off
       showCaption("Market Bubble", "Every stream. One chat.");
       await move(window.innerWidth * 0.82, window.innerHeight * 0.5);
-      await sleep(3200);
+      await sleep(1700);
       hideCaption();
       cur.style.opacity = "0";
+      await sleep(350);
+
+      // OUTRO — cinematic bookend (orb + wordmark + glyph row)
+      const playOutro = (window as unknown as { __playOutro?: () => void })
+        .__playOutro;
+      if (playOutro) {
+        playOutro();
+        await sleep(4900);
+      }
     };
 
     (window as unknown as { __startTour?: () => void }).__startTour = () => {

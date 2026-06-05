@@ -149,10 +149,13 @@ export function LandingTitle() {
             transition: `opacity .55s ease, transform .7s ${EASE_OUT}`,
           }}
         >
-          <div className="text-[36px] font-semibold leading-none tracking-tight text-fg">
+          <div
+            className="text-[40px] font-semibold leading-none tracking-tight text-white"
+            style={{ textShadow: "0 2px 24px rgba(176,139,242,0.45)" }}
+          >
             Market Bubble
           </div>
-          <div className="mt-3 bg-gradient-to-r from-[#b08bf2] via-[#cdbcff] to-[#8aa0ff] bg-clip-text text-[12px] font-medium uppercase tracking-[0.36em] text-transparent">
+          <div className="mt-3.5 text-[13px] font-semibold uppercase tracking-[0.34em] text-[#cabff2]">
             Every stream · One chat
           </div>
         </div>

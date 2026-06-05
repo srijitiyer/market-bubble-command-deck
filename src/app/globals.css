@@ -190,6 +190,23 @@ body::after {
   animation: msg-in 0.16s var(--ease-out);
 }
 
+/* while a panel handle is being dragged: lock the cursor + kill selection */
+body.mb-resizing,
+body.mb-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* light sweep across the outro wordmark */
+@keyframes sweep {
+  from {
+    background-position: 140% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
 /* intro shockwave ring */
 @keyframes shock {
   from {

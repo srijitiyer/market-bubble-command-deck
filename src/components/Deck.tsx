@@ -21,6 +21,7 @@ import { TickerRail } from "./TickerRail";
 import { SentimentMeter } from "./SentimentMeter";
 import { SharedComposer } from "./SharedComposer";
 import { LandingTitle } from "./LandingTitle";
+import { LandingOutro } from "./LandingOutro";
 import { FeaturedBar } from "./FeaturedBar";
 import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
@@ -183,6 +184,7 @@ export function Deck() {
       {/* fixed overlays — siblings of the stage so they aren't affected by the
           tour's zoom transform */}
       <LandingTitle />
+      <LandingOutro />
       <CommandPalette />
       <DemoTour />
 
