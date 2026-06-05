@@ -1,7 +1,8 @@
 import { memo } from "react";
-import { Crown, Gem, Megaphone, Shield, Star } from "lucide-react";
+import { Crown, Gem, Megaphone, Pin, Shield, Star } from "lucide-react";
 import type { ChatMessage } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
+import { useDeck } from "@/lib/store";
 import { cn, formatClock } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 import { CashTag } from "./CashTag";
@@ -111,9 +112,19 @@ function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
         <span className="break-words text-[#d4d8e0]">{renderText(msg.text)}</span>
       </div>
 
-      <span className="mono mt-[3px] shrink-0 text-[10px] text-faint opacity-0 transition-opacity group-hover:opacity-100">
-        {formatClock(msg.timestamp)}
-      </span>
+      <div className="flex shrink-0 items-start gap-1.5">
+        <button
+          onClick={() => useDeck.getState().setFeatured(msg)}
+          className="mt-[1px] rounded p-0.5 text-faint opacity-0 transition hover:bg-white/10 hover:text-brand group-hover:opacity-100"
+          title="Feature this message"
+          aria-label="Feature this message"
+        >
+          <Pin className="h-3 w-3" />
+        </button>
+        <span className="mono mt-[3px] text-[10px] text-faint opacity-0 transition-opacity group-hover:opacity-100">
+          {formatClock(msg.timestamp)}
+        </span>
+      </div>
     </div>
   );
 }

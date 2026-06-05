@@ -16,6 +16,7 @@ import { TickerRail } from "./TickerRail";
 import { SentimentMeter } from "./SentimentMeter";
 import { SharedComposer } from "./SharedComposer";
 import { LandingTitle } from "./LandingTitle";
+import { FeaturedBar } from "./FeaturedBar";
 
 // Channels seeded on first load so the deck is alive the moment it opens.
 // Demo mode is on by default, so these run synthetic traffic; toggle Demo off
@@ -102,6 +103,7 @@ export function Deck() {
             </span>
           </div>
           <FeedToolbar />
+          <FeaturedBar />
           <div className="min-h-0 flex-1">
             <UnifiedFeed />
           </div>

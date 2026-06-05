@@ -45,6 +45,7 @@ interface DeckState {
   demoMode: boolean;
   soundOn: boolean;
   activeStream: string | null; // key of channel being watched large
+  featured: ChatMessage | null; // message pinned to the featured/overlay slot
 
   // actions
   addChannel: (
@@ -69,6 +70,7 @@ interface DeckState {
   refreshMeta: () => void;
   broadcast: (text: string) => void;
   hydrate: (channels: PersistedChannel[], demoMode: boolean, soundOn: boolean) => void;
+  setFeatured: (msg: ChatMessage | null) => void;
 }
 
 export const channelKey = (platform: Platform, channel: string) =>
@@ -191,6 +193,7 @@ export const useDeck = create<DeckState>((set, get) => ({
   demoMode: true,
   soundOn: false,
   activeStream: null,
+  featured: null,
 
   addChannel: (platform, channel, opts) => {
     const clean = channel.toLowerCase().replace(/^[#@]/, "").trim();
@@ -385,6 +388,8 @@ export const useDeck = create<DeckState>((set, get) => ({
   },
 
   setActiveStream: (key) => set({ activeStream: key }),
+
+  setFeatured: (msg) => set({ featured: msg }),
 
   broadcast: (text) => {
     const clean = text.trim();
