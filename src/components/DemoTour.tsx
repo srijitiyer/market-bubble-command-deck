@@ -9,7 +9,10 @@ import { useDeck } from "@/lib/store";
 // window.__startTour().
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+// Smooth ease-in-out so the cursor accelerates and settles gently (not "sharp").
+const EASE = "cubic-bezier(0.45, 0, 0.25, 1)";
+const CUR_MS = 780;
+const ZOOM_MS = 980;
 
 export function DemoTour() {
   useEffect(() => {
@@ -22,7 +25,7 @@ export function DemoTour() {
       c.id = "__tcur";
       c.style.cssText =
         "position:fixed;left:0;top:0;width:26px;height:26px;z-index:100002;pointer-events:none;" +
-        "transition:transform .62s " + EASE + ",opacity .35s;transform:translate(50vw,46vh);" +
+        `transition:transform ${CUR_MS}ms ${EASE},opacity .35s;transform:translate(50vw,46vh);` +
         "filter:drop-shadow(0 0 6px rgba(184,139,255,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
       c.innerHTML =
         '<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M5 3 L5 20 L9.5 15.2 L12.8 22 L15.6 20.7 L12.3 14 L19 14 Z" fill="#fff" stroke="#0a0a0a" stroke-width="1.4" stroke-linejoin="round"/></svg>';
@@ -36,7 +39,7 @@ export function DemoTour() {
       cur.dataset.x = String(x);
       cur.dataset.y = String(y);
       cur.style.transform = `translate(${x}px,${y}px)`;
-      return sleep(640);
+      return sleep(CUR_MS + 40);
     };
     const ripple = () => {
       const r = document.createElement("div");
@@ -57,7 +60,7 @@ export function DemoTour() {
     let S = 1,
       TX = 0,
       TY = 0;
-    if (stage) stage.style.transition = `transform .8s ${EASE}`;
+    if (stage) stage.style.transition = `transform ${ZOOM_MS}ms ${EASE}`;
     const applyZoom = () => {
       if (stage) stage.style.transform = `translate(${TX}px,${TY}px) scale(${S})`;
     };
@@ -71,14 +74,14 @@ export function DemoTour() {
       TX = window.innerWidth / 2 - ux * S;
       TY = window.innerHeight / 2 - uy * S;
       applyZoom();
-      await sleep(820);
+      await sleep(ZOOM_MS + 60);
     };
     const zoomReset = async () => {
       S = 1;
       TX = 0;
       TY = 0;
       applyZoom();
-      await sleep(820);
+      await sleep(ZOOM_MS + 60);
     };
     const moveToEl = async (el: Element | null | undefined) => {
       if (!el) return;
@@ -228,29 +231,30 @@ export function DemoTour() {
       ).__mbSetLayout;
       if (setL) {
         const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-        for (let i = 1; i <= 18; i++) {
+        // cursor tracks the handle instantly (handle itself moves smoothly)
+        cur.style.transition = "none";
+        const track = () => {
+          if (!sep) return;
+          const r = sep.getBoundingClientRect();
+          cur.style.transform = `translate(${r.left + r.width / 2 - 8}px,${r.top + r.height / 2 - 5}px)`;
+        };
+        const steps = 26;
+        for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
-          const t = i / 18;
+          const t = i / steps;
           setL({ left: 17, center: lerp(53, 37, t), right: lerp(30, 46, t) });
-          if (sep) {
-            const r = sep.getBoundingClientRect();
-            cur.style.transition = "transform .12s linear";
-            cur.style.transform = `translate(${r.left + r.width / 2 - 8}px,${r.top + r.height / 2 - 5}px)`;
-          }
-          await sleep(42);
+          track();
+          await sleep(34);
         }
         await sleep(550);
-        for (let i = 1; i <= 18; i++) {
+        for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
-          const t = i / 18;
+          const t = i / steps;
           setL({ left: 17, center: lerp(37, 53, t), right: lerp(46, 30, t) });
-          if (sep) {
-            const r = sep.getBoundingClientRect();
-            cur.style.transform = `translate(${r.left + r.width / 2 - 8}px,${r.top + r.height / 2 - 5}px)`;
-          }
-          await sleep(42);
+          track();
+          await sleep(34);
         }
-        cur.style.transition = `transform .62s ${EASE}`;
+        cur.style.transition = `transform ${CUR_MS}ms ${EASE}`;
       }
       await sleep(700);
       if (cancelled) return;
