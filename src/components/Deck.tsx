@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageSquare } from "lucide-react";
 import {
   Group,
   Panel,
@@ -25,6 +24,7 @@ import { LandingTitle } from "./LandingTitle";
 import { FeaturedBar } from "./FeaturedBar";
 import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
+import { PanelHeader } from "./PanelHeader";
 
 const SEED = [
   { platform: "twitch" as const, channel: "marketbubble" },
@@ -116,12 +116,15 @@ export function Deck() {
   }, [isDesktop]);
 
   const leftRail = (
-    <aside className="panel flex h-full min-h-0 flex-col p-3.5">
-      <div className="min-h-0 flex-1 overflow-y-auto">
+    <aside className="panel flex h-full min-h-0 flex-col">
+      <PanelHeader
+        title="Sources"
+        aside={<span className="mono text-[11px] text-faint">{channelCount}</span>}
+      />
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <ChannelManager />
       </div>
-      <div className="hairline my-3 shrink-0" />
-      <div className="shrink-0">
+      <div className="shrink-0 border-t border-border p-4">
         <SourceLegend />
       </div>
     </aside>
@@ -129,13 +132,10 @@ export function Deck() {
 
   const centerMain = (
     <main className="panel flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-        <MessageSquare className="h-4 w-4 text-brand" />
-        <h1 className="text-sm font-semibold">Unified Feed</h1>
-        <span className="hidden text-[11px] text-faint sm:inline">
-          every chat, one stream, source-labeled
-        </span>
-      </div>
+      <PanelHeader
+        title="Unified Feed"
+        aside={<span className="eyebrow">live · merged · labeled</span>}
+      />
       <FeedToolbar />
       <FeaturedBar />
       <div className="min-h-0 flex-1">
@@ -147,21 +147,23 @@ export function Deck() {
 
   const rightRail = (
     <aside className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto">
-      <section className="panel p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="eyebrow">Watch</span>
-          <span className="eyebrow">native multistream</span>
+      <section className="panel flex flex-col overflow-hidden">
+        <PanelHeader
+          title="Watch"
+          aside={<span className="eyebrow">native multistream</span>}
+        />
+        <div className="p-4">
+          <StreamWatch />
         </div>
-        <StreamWatch />
       </section>
-      <section className="panel flex flex-col gap-4 p-3.5">
-        <StatsDeck />
-        <div className="hairline" />
-        <SentimentMeter />
-        <div className="hairline" />
-        <AudiencePanel />
-        <div className="hairline" />
-        <TopChatters />
+      <section className="panel flex flex-col">
+        <PanelHeader title="Intelligence" />
+        <div className="flex flex-col gap-6 p-4">
+          <StatsDeck />
+          <SentimentMeter />
+          <AudiencePanel />
+          <TopChatters />
+        </div>
       </section>
     </aside>
   );

@@ -46,12 +46,7 @@ export function ChannelManager() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="eyebrow">Sources</span>
-        <span className="mono text-[11px] text-faint">{channels.length}</span>
-      </div>
-
+    <div className="flex flex-col gap-4">
       <form onSubmit={submit} className="flex flex-col gap-2">
         <div className="flex gap-1">
           {PLATFORM_LIST.map((p) => {
@@ -63,7 +58,7 @@ export function ChannelManager() {
                 type="button"
                 onClick={() => setPlatform(p)}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition",
+                  "flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-[11px] font-medium transition-colors duration-150",
                   on ? "text-fg" : "text-faint hover:text-dim",
                 )}
                 style={
