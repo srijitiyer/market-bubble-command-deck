@@ -10,11 +10,13 @@ import type {
 } from "./types";
 import { PLATFORM_LIST } from "./types";
 import type { Connector } from "./connectors/base";
+import { extractEntities } from "./connectors/base";
 import { TwitchConnector } from "./connectors/twitch";
 import { KickConnector } from "./connectors/kick";
 import { XConnector } from "./connectors/x";
 import { startDemoStream } from "./connectors/demo";
 import { blip, unlockAudio } from "./sound";
+import { fetchTwitchMeta } from "./twitchMeta";
 
 const MAX_MESSAGES = 600;
 const RATE_WINDOW_MS = 60_000;
@@ -58,6 +60,8 @@ interface DeckState {
   toggleDemo: () => void;
   toggleSound: () => void;
   setActiveStream: (key: string | null) => void;
+  refreshMeta: () => void;
+  broadcast: (text: string) => void;
 }
 
 export const channelKey = (platform: Platform, channel: string) =>
@@ -344,6 +348,49 @@ export const useDeck = create<DeckState>((set, get) => ({
   },
 
   setActiveStream: (key) => set({ activeStream: key }),
+
+  broadcast: (text) => {
+    const clean = text.trim();
+    if (!clean) return;
+    const { mentions, tickers } = extractEntities(clean);
+    const msg: ChatMessage = {
+      id: `host_${Date.now()}`,
+      platform: "twitch", // nominal; host messages render distinctly via isHost
+      channel: "shared",
+      username: "MarketBubble",
+      displayName: "Market Bubble",
+      color: "#b88bff",
+      text: clean,
+      badges: [{ type: "broadcaster" }],
+      timestamp: Date.now(),
+      isBroadcaster: true,
+      isHost: true,
+      mentions,
+      tickers,
+    };
+    buffer.push(msg);
+    scheduleFlush(get, set);
+  },
+
+  refreshMeta: () => {
+    // Real Twitch stream metadata (live/viewers/title). Demo mode shows
+    // synthetic stages, so skip the network calls there.
+    if (get().demoMode) return;
+    for (const c of get().channels) {
+      if (c.platform !== "twitch") continue;
+      const key = channelKey(c.platform, c.channel);
+      void fetchTwitchMeta(c.channel).then((meta) => {
+        if (!meta) return;
+        set((s) => ({
+          channels: s.channels.map((ch) =>
+            channelKey(ch.platform, ch.channel) === key
+              ? { ...ch, isLive: meta.isLive, viewers: meta.viewers, title: meta.title }
+              : ch,
+          ),
+        }));
+      });
+    }
+  },
 }));
 
 // --- selectors -------------------------------------------------------------
@@ -357,6 +404,7 @@ export function filterMessages(state: DeckState): ChatMessage[] {
   const { filters } = state;
   const q = filters.search.trim().toLowerCase();
   return state.messages.filter((m) => {
+    if (m.isHost) return q ? m.text.toLowerCase().includes(q) : true;
     if (!filters.platforms[m.platform]) return false;
     if (filters.mode === "mentions" && !(m.mentions && m.mentions.length))
       return false;

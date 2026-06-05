@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Crown, Gem, Shield, Star } from "lucide-react";
+import { Crown, Gem, Megaphone, Shield, Star } from "lucide-react";
 import type { ChatMessage } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
 import { cn, formatClock } from "@/lib/utils";
@@ -51,6 +51,33 @@ function Badges({ msg }: { msg: ChatMessage }) {
 
 function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
   const meta = PLATFORMS[msg.platform];
+
+  if (msg.isHost) {
+    return (
+      <div
+        className={cn(
+          "relative mx-2 my-1 flex items-start gap-2 rounded-lg border px-3 py-2 text-[13px] leading-snug",
+          fresh && "animate-msg-in",
+        )}
+        style={{
+          background: "rgba(184,139,255,0.08)",
+          borderColor: "rgba(184,139,255,0.35)",
+        }}
+      >
+        <Megaphone className="mt-[2px] h-3.5 w-3.5 shrink-0 text-brand" />
+        <div className="min-w-0 flex-1">
+          <span className="mr-1.5 inline-flex items-center gap-1 align-baseline">
+            <span className="font-semibold text-brand">{msg.displayName}</span>
+            <span className="rounded bg-brand/20 px-1 text-[9px] font-bold uppercase tracking-wider text-brand">
+              Host → all
+            </span>
+          </span>
+          <span className="break-words text-fg">{renderText(msg.text)}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

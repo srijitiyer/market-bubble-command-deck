@@ -31,6 +31,8 @@ export interface ChatMessage {
   mentions?: string[]; // @handles referenced
   tickers?: string[]; // $TICKER cashtags referenced
   highlighted?: boolean;
+  // Host broadcast posted from the unified composer (the "one shared chat").
+  isHost?: boolean;
 }
 
 export interface StreamChannel {

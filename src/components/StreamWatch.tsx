@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ExternalLink, Tv } from "lucide-react";
 import { useDeck, channelKey } from "@/lib/store";
 import { PLATFORMS, type StreamChannel } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 import { DemoStage } from "./DemoStage";
 
@@ -23,6 +23,9 @@ function StreamEmbed({
 
   if (platform === "twitch") {
     if (!host) return <EmbedSkeleton />;
+    // Real metadata says offline -> clean branded offline card instead of
+    // Twitch's own "channel is offline" embed.
+    if (stream.isLive === false) return <OfflineCard stream={stream} />;
     const src = `https://player.twitch.tv/?channel=${encodeURIComponent(
       channel,
     )}&parent=${host}&muted=true&autoplay=true`;
@@ -81,6 +84,28 @@ function EmbedSkeleton() {
   );
 }
 
+function OfflineCard({ stream }: { stream: StreamChannel }) {
+  const meta = PLATFORMS[stream.platform];
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[#0a0c12] text-center">
+      <PlatformIcon
+        platform={stream.platform}
+        className="h-8 w-8 opacity-60"
+        style={{ color: meta.accent }}
+      />
+      <div className="text-sm font-medium text-fg">{stream.channel}</div>
+      <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-faint">
+        Offline
+      </div>
+      {stream.title && (
+        <p className="mt-1 max-w-xs px-6 text-[11px] text-faint line-clamp-2">
+          Last: {stream.title}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function StreamWatch() {
   const channels = useDeck((s) => s.channels);
   const activeStream = useDeck((s) => s.activeStream);
@@ -123,8 +148,21 @@ export function StreamWatch() {
             <span className="text-[11px] font-medium text-fg">
               {active.channel}
             </span>
+            {!demoMode && active.isLive && (
+              <span className="ml-0.5 flex items-center gap-1 rounded bg-neg/20 px-1 text-[9px] font-bold uppercase tracking-wider text-neg">
+                <span className="h-1 w-1 rounded-full bg-neg live-dot" /> Live
+              </span>
+            )}
           </div>
         )}
+        {active && !demoMode && active.isLive && active.viewers ? (
+          <div className="pointer-events-none absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
+            <span className="mono text-[11px] text-fg">
+              {formatNumber(active.viewers)}
+            </span>
+            <span className="text-[10px] text-faint">watching</span>
+          </div>
+        ) : null}
       </div>
 
       {channels.length > 1 && (

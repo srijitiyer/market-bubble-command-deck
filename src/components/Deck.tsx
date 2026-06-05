@@ -11,6 +11,9 @@ import { FeedToolbar } from "./FeedToolbar";
 import { StatsDeck, TopChatters } from "./StatsDeck";
 import { AudiencePanel } from "./AudiencePanel";
 import { SourceLegend } from "./SourceLegend";
+import { TickerRail } from "./TickerRail";
+import { SentimentMeter } from "./SentimentMeter";
+import { SharedComposer } from "./SharedComposer";
 
 // Channels seeded on first load so the deck is alive the moment it opens.
 // Demo mode is on by default, so these run synthetic traffic; toggle Demo off
@@ -25,6 +28,8 @@ export function Deck() {
   const addChannel = useDeck((s) => s.addChannel);
   const channelCount = useDeck((s) => s.channels.length);
   const toggleDemo = useDeck((s) => s.toggleDemo);
+  const refreshMeta = useDeck((s) => s.refreshMeta);
+  const demoMode = useDeck((s) => s.demoMode);
   const seeded = useRef(false);
 
   useEffect(() => {
@@ -32,6 +37,14 @@ export function Deck() {
     seeded.current = true;
     for (const s of SEED) addChannel(s.platform, s.channel);
   }, [addChannel, channelCount]);
+
+  // Poll real Twitch stream metadata (live/viewers/title) while not in demo.
+  useEffect(() => {
+    if (demoMode) return;
+    refreshMeta();
+    const id = setInterval(refreshMeta, 60_000);
+    return () => clearInterval(id);
+  }, [demoMode, refreshMeta, channelCount]);
 
   // Power-user shortcuts: "/" focuses search, "d" toggles demo.
   useEffect(() => {
@@ -57,6 +70,9 @@ export function Deck() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar />
+      <div className="relative z-10 border-b border-border bg-bg-soft/40">
+        <TickerRail />
+      </div>
 
       <div className="relative z-10 grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_392px]">
         {/* Left rail — sources */}
@@ -79,6 +95,7 @@ export function Deck() {
           <div className="min-h-0 flex-1">
             <UnifiedFeed />
           </div>
+          <SharedComposer />
         </main>
 
         {/* Right rail — watch + intelligence */}
@@ -95,9 +112,11 @@ export function Deck() {
 
           <section className="panel flex flex-col gap-4 p-3.5">
             <StatsDeck />
-            <div className="h-px bg-border" />
+            <div className="hairline" />
+            <SentimentMeter />
+            <div className="hairline" />
             <AudiencePanel />
-            <div className="h-px bg-border" />
+            <div className="hairline" />
             <TopChatters />
           </section>
         </aside>

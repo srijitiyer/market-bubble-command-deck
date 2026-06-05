@@ -2,35 +2,51 @@
 
 /* ----------------------------------------------------------------------------
    Market Bubble — Command Deck design system
-   Dark "trading-desk" aesthetic: near-black canvas, glass panels, neon platform
-   accents (Twitch violet / Kick green / X white-blue), mono numerals.
+   Premium trading-terminal aesthetic: cool-slate near-monochrome spine, ONE
+   rationed violet accent, green/red reserved for data, white-alpha hairlines,
+   elevation by lightness, tabular mono numerals, disciplined glow.
 ---------------------------------------------------------------------------- */
 
 @theme inline {
-  --color-bg: #06070b;
-  --color-bg-soft: #0a0c12;
-  --color-panel: rgba(255, 255, 255, 0.025);
-  --color-panel-strong: rgba(255, 255, 255, 0.045);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.14);
-  --color-fg: #eef1f6;
-  --color-fg-dim: #99a0ad;
-  --color-fg-faint: #5b616e;
+  /* canvas + elevation (lightness steps, cool-tinted) */
+  --color-bg: #08090c;
+  --color-bg-soft: #0c0d11;
+  --color-panel: #121318;
+  --color-panel-strong: #16171d;
+  --color-raised: #1b1c23;
+  --color-overlay: #1f2027;
 
-  --color-brand: #b16cff;
-  --color-brand-2: #6c8cff;
+  /* white-alpha hairlines compose over any surface */
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-strong: rgba(255, 255, 255, 0.13);
+  --color-border-subtle: rgba(255, 255, 255, 0.045);
 
+  /* text — off-white, never pure #fff */
+  --color-fg: #ecedf1;
+  --color-fg-dim: #abaeb9;
+  --color-fg-faint: #6b6e7a;
+
+  /* one rationed accent (brand violet) */
+  --color-brand: #b88bff;
+  --color-brand-2: #8aa0ff;
+
+  /* platform accents — used only on rails / icons / badges */
   --color-twitch: #a970ff;
   --color-kick: #53fc18;
   --color-x: #e7e9ea;
 
-  --color-pos: #2ee6a6;
-  --color-neg: #ff5c7c;
+  /* market semantics — only on numbers / deltas */
+  --color-pos: #2ebd85;
+  --color-neg: #f6465d;
+  --color-warn: #f5a623;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  --radius-xl2: 1.25rem;
+  --radius-xl2: 1rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html {
@@ -42,11 +58,13 @@ body {
   background: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overscroll-behavior: none;
 }
 
-/* Ambient light: faint radial glows behind the deck */
+/* Ambient light: restrained radial glows behind the deck */
 body::before {
   content: "";
   position: fixed;
@@ -54,37 +72,46 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(60rem 40rem at 12% -10%, rgba(177, 108, 255, 0.12), transparent 60%),
-    radial-gradient(50rem 36rem at 100% 0%, rgba(108, 140, 255, 0.10), transparent 55%),
-    radial-gradient(46rem 32rem at 70% 110%, rgba(83, 252, 24, 0.06), transparent 60%);
+    radial-gradient(56rem 38rem at 10% -12%, rgba(177, 108, 255, 0.08), transparent 60%),
+    radial-gradient(48rem 34rem at 102% -4%, rgba(108, 140, 255, 0.06), transparent 55%),
+    radial-gradient(44rem 30rem at 72% 116%, rgba(83, 252, 24, 0.035), transparent 60%);
 }
 
-/* Fine grain noise to kill banding on the gradients */
+/* Fine grain to kill banding on the gradients */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.025;
+  opacity: 0.02;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* --- scrollbars ---------------------------------------------------------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- focus rings (keyboard only) ---------------------------------------- */
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px rgba(184, 139, 255, 0.7);
+  border-radius: 6px;
 }
 
 /* --- reusable component classes ----------------------------------------- */
@@ -93,15 +120,26 @@ body::after {
     background: var(--color-panel);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl2);
-    backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
   }
   .panel-inset {
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--color-bg-soft);
     border: 1px solid var(--color-border);
-    border-radius: 0.9rem;
+    border-radius: 0.7rem;
+  }
+  .raised {
+    background: var(--color-raised);
+    border: 1px solid var(--color-border);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      0 8px 24px rgba(0, 0, 0, 0.45);
   }
   .mono {
     font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+  .tnum {
     font-variant-numeric: tabular-nums;
   }
   .text-dim {
@@ -110,13 +148,32 @@ body::after {
   .text-faint {
     color: var(--color-fg-faint);
   }
+  /* micro uppercase label — the trading-terminal idiom */
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-fg-faint);
+  }
+  .hairline {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.09) 18%,
+      rgba(255, 255, 255, 0.09) 82%,
+      transparent
+    );
+  }
 }
 
 /* --- animations ---------------------------------------------------------- */
 @keyframes msg-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(3px);
   }
   to {
     opacity: 1;
@@ -124,7 +181,7 @@ body::after {
   }
 }
 .animate-msg-in {
-  animation: msg-in 0.18s ease-out;
+  animation: msg-in 0.16s var(--ease-out);
 }
 
 @keyframes pulse-dot {
@@ -134,12 +191,36 @@ body::after {
     transform: scale(1);
   }
   50% {
-    opacity: 0.45;
-    transform: scale(0.82);
+    opacity: 0.4;
+    transform: scale(0.78);
   }
 }
 .live-dot {
-  animation: pulse-dot 1.6s ease-in-out infinite;
+  animation: pulse-dot 1.7s ease-in-out infinite;
+}
+
+/* Bloomberg-style tick flash on value change */
+@keyframes tick-up {
+  0% {
+    background: rgba(46, 189, 133, 0.22);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes tick-down {
+  0% {
+    background: rgba(246, 70, 93, 0.22);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.tick-up {
+  animation: tick-up 0.45s var(--ease-out);
+}
+.tick-down {
+  animation: tick-down 0.45s var(--ease-out);
 }
 
 @keyframes float-bubble {
@@ -148,7 +229,7 @@ body::after {
     opacity: 0;
   }
   12% {
-    opacity: 0.55;
+    opacity: 0.5;
   }
   100% {
     transform: translateY(-130px) scale(1.25);
@@ -156,7 +237,39 @@ body::after {
   }
 }
 
+@keyframes title-fade {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  18%,
+  74% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+    visibility: hidden;
+  }
+}
+.animate-title {
+  animation: title-fade 2.4s var(--ease-out) forwards;
+}
+
 .glow-brand {
-  box-shadow: 0 0 0 1px rgba(177, 108, 255, 0.35),
-    0 8px 40px -12px rgba(177, 108, 255, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(184, 139, 255, 0.35),
+    0 8px 40px -12px rgba(184, 139, 255, 0.5);
+}
+
+/* --- respect reduced motion --------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

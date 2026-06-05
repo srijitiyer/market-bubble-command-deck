@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, X as XClose } from "lucide-react";
 import { useDeck, channelKey } from "@/lib/store";
 import { PLATFORMS, PLATFORM_LIST, type Platform } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 import { ConnectionDot } from "./ConnectionDot";
 
@@ -146,6 +146,11 @@ export function ChannelManager() {
                   <span className="truncate text-xs font-medium text-fg">
                     {c.channel}
                   </span>
+                  {c.viewers ? (
+                    <span className="mono text-[10px] text-faint">
+                      {formatNumber(c.viewers)} viewers
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ConnectionDot state={conn?.state ?? "idle"} withLabel />
