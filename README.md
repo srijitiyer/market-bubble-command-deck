@@ -9,20 +9,28 @@ $10,000 Vibe Code Challenge.
 - **Unified live feed** — Twitch, Kick and X chat merged into one real-time,
   virtualized stream. Each message carries a colored **source label** (icon +
   platform accent rail) so you always know where it came from.
+- **One Shared Chat composer** — a single box that broadcasts to the merged room.
+  Your attention is split across three platforms; your audience shouldn't be.
 - **Native multistream watch** — embed and watch the active stream right in the
-  deck while you read the merged chat.
+  deck (with real live viewer counts) while you read the merged chat.
 - **Live audience map** — every active chatter as a platform-ringed dot. **Hover
   any viewer to see which platform they came from**, their last message, and
   message count. (The exact feature the Market Bubble C-suite asked for.)
-- **Command-deck intelligence** — messages/min, live-feed count, per-platform
-  chat-mix bar, and a top-chatters leaderboard.
+- **Crypto intelligence layer** — a live **markets ticker rail** (real CoinGecko
+  prices), **`$CASHTAG` hovercards** showing live price / 24h / market cap right
+  in chat, and a **chat-sentiment + hype meter** (bullish · copium · FUD).
+- **Feature-to-overlay** — pin any message to a highlight slot, the streamer
+  "featured chat" pattern.
+- **Command-deck intelligence** — messages/min, live-feed count, total viewers,
+  per-platform chat-mix bar, and a top-chatters leaderboard.
 - **Filters that matter** — per-platform toggles, full-text search, and quick
-  modes for `@mentions`, `$tickers`, and mods only. `$CASHTAGS` and `@mentions`
-  are auto-highlighted inline.
+  modes for `@mentions`, `$tickers`, and mods only.
 - **Pause-on-scroll** — scroll up to read; the feed freezes and shows a
   "jump to live" pill with the count of messages you missed.
 - **Demo mode** — synthetic-but-believable crypto-stream chatter across all three
   sources so the deck is alive the instant it opens (on by default).
+- Elite cool-slate trading-terminal design · keyboard shortcuts (`/`, `d`) ·
+  sound cues · ARIA live region · reduced-motion · session + Kick-id persistence.
 
 ## How sourcing works (honest by design)
 
