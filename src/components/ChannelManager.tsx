@@ -8,6 +8,15 @@ import { cn, formatNumber, profileUrl } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 import { ConnectionDot } from "./ConnectionDot";
 
+// Popular channels for one-click adding (flip Demo off to ingest their real chat).
+const QUICK_ADD: { platform: Platform; channel: string }[] = [
+  { platform: "twitch", channel: "kaicenat" },
+  { platform: "twitch", channel: "xqc" },
+  { platform: "kick", channel: "trainwreckstv" },
+  { platform: "twitch", channel: "jynxzi" },
+  { platform: "kick", channel: "adinross" },
+];
+
 export function ChannelManager() {
   const channels = useDeck((s) => s.channels);
   const connections = useDeck((s) => s.connections);
@@ -19,6 +28,13 @@ export function ChannelManager() {
   const [platform, setPlatform] = useState<Platform>("twitch");
   const [value, setValue] = useState("");
   const [chatroomId, setChatroomId] = useState("");
+
+  const availableQuickAdd = QUICK_ADD.filter(
+    (q) =>
+      !channels.some(
+        (c) => channelKey(c.platform, c.channel) === channelKey(q.platform, q.channel),
+      ),
+  );
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +199,32 @@ export function ChannelManager() {
           );
         })}
       </div>
+
+      {availableQuickAdd.length > 0 && (
+        <div className="flex flex-col gap-2 pt-1">
+          <span className="eyebrow">Quick add a live channel</span>
+          <div className="flex flex-wrap gap-1.5">
+            {availableQuickAdd.map((q) => {
+              const meta = PLATFORMS[q.platform];
+              return (
+                <button
+                  key={`${q.platform}:${q.channel}`}
+                  onClick={() => addChannel(q.platform, q.channel)}
+                  className="flex items-center gap-1.5 rounded-lg bg-white/[0.025] px-2 py-1 text-[11px] text-dim ring-1 ring-border transition hover:bg-white/[0.06] hover:text-fg"
+                  title={`Add ${q.channel} on ${meta.name}`}
+                >
+                  <PlatformIcon
+                    platform={q.platform}
+                    className="h-3 w-3"
+                    style={{ color: meta.accent }}
+                  />
+                  {q.channel}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

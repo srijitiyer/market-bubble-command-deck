@@ -116,10 +116,14 @@ export function Deck() {
   }, [isDesktop]);
 
   const leftRail = (
-    <aside className="panel flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-3.5">
-      <ChannelManager />
-      <div className="hairline" />
-      <SourceLegend />
+    <aside className="panel flex h-full min-h-0 flex-col p-3.5">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <ChannelManager />
+      </div>
+      <div className="hairline my-3 shrink-0" />
+      <div className="shrink-0">
+        <SourceLegend />
+      </div>
     </aside>
   );
 
