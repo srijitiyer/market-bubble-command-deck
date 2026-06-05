@@ -33,19 +33,21 @@ export function TopBar() {
   ).length;
 
   return (
-    <header className="relative z-10 flex items-center gap-4 border-b border-border px-4 py-2">
-      <div className="flex items-center gap-2.5">
-        <BubbleMark className="h-8 w-8 drop-shadow-[0_2px_10px_rgba(184,139,255,0.55)]" />
+    <header className="relative z-10 flex h-14 shrink-0 items-center gap-4 border-b border-border px-4">
+      <div className="flex items-center gap-3">
+        <BubbleMark className="h-8 w-8 drop-shadow-[0_2px_10px_rgba(184,139,255,0.5)]" />
         <div className="leading-none">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold tracking-tight">
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] font-semibold tracking-tight">
               Market Bubble
             </span>
-            <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.16em] text-dim">
+            <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-dim">
               Command Deck
             </span>
           </div>
-          <span className="text-[11px] text-faint">Every stream · One chat</span>
+          <span className="mt-1 block text-[11px] text-faint">
+            Every stream · One chat
+          </span>
         </div>
       </div>
 
@@ -72,7 +74,7 @@ export function TopBar() {
               new KeyboardEvent("keydown", { key: "k", metaKey: true }),
             )
           }
-          className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-faint ring-1 ring-border transition hover:text-dim hover:ring-border-strong sm:flex"
+          className="hidden h-8 items-center gap-1.5 rounded-md px-2.5 text-[11px] text-faint ring-1 ring-border transition-colors duration-150 hover:text-dim hover:ring-border-strong sm:flex"
           title="Command palette"
         >
           <span>Commands</span>
@@ -80,7 +82,7 @@ export function TopBar() {
         </button>
         <button
           onClick={toggleSound}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-faint ring-1 ring-border transition hover:text-dim hover:ring-border-strong"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-faint ring-1 ring-border transition-colors duration-150 hover:text-dim hover:ring-border-strong"
           title={soundOn ? "Mute alerts" : "Unmute alerts"}
         >
           {soundOn ? (
@@ -93,7 +95,7 @@ export function TopBar() {
         <button
           onClick={toggleDemo}
           className={cn(
-            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
+            "flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors duration-150",
             demoMode
               ? "bg-brand text-[#1a0e2e] shadow-lg shadow-brand/20"
               : "text-dim ring-1 ring-border hover:text-fg hover:ring-border-strong",

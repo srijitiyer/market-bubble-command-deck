@@ -48,5 +48,6 @@ export function colorFromString(str: string): string {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash) % 360;
-  return `hsl(${hue} 70% 65%)`;
+  // Softer, more cohesive than full-neon; lightness clamped for contrast on dark.
+  return `hsl(${hue} 58% 68%)`;
 }

@@ -242,6 +242,27 @@ body::after {
   animation-play-state: paused;
 }
 
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes halo {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.2;
+  }
+}
+
 @keyframes float-bubble {
   0% {
     transform: translateY(0) scale(0.6);
