@@ -1,13 +1,16 @@
 "use client";
 
-// Live token prices from CoinGecko's public API (CORS-open, no key). Powers the
-// ticker rail and the $cashtag hovercards. Cached in-memory with a short TTL so
-// hovering many cashtags doesn't hammer the endpoint.
+// Token market data. We fetch through our own /api/markets route, which proxies
+// CoinGecko with shared server-side caching + a last-good fallback, so clients
+// never hit CoinGecko's aggressive free-tier rate limit directly.
 
-export interface TokenPrice {
+export interface MarketRow {
+  id: string;
+  symbol: string;
   usd: number;
   change24h: number;
   marketCap: number;
+  spark: number[];
 }
 
 // Common crypto-stream cashtags -> CoinGecko ids.
@@ -33,213 +36,65 @@ export const SYMBOL_TO_ID: Record<string, string> = {
 // Symbols shown in the top ticker rail (all real, on CoinGecko).
 export const RAIL_SYMBOLS = ["SOL", "BTC", "ETH", "WIF", "BONK", "POPCAT", "PEPE", "DOGE"];
 
-const cache = new Map<string, { value: TokenPrice; ts: number }>();
-const inflight = new Map<string, Promise<TokenPrice | null>>();
 const TTL = 30_000;
+const cache = new Map<string, { row: MarketRow; ts: number }>();
+const inflight = new Map<string, Promise<MarketRow[]>>();
 
-const CG = "https://api.coingecko.com/api/v3/simple/price";
-
-async function fetchIds(ids: string[]): Promise<Record<string, TokenPrice>> {
-  const url = `${CG}?ids=${ids.join(",")}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(String(res.status));
-  const json = await res.json();
-  const out: Record<string, TokenPrice> = {};
-  for (const id of ids) {
-    const row = json[id];
-    if (row && typeof row.usd === "number") {
-      out[id] = {
-        usd: row.usd,
-        change24h: row.usd_24h_change ?? 0,
-        marketCap: row.usd_market_cap ?? 0,
-      };
-    }
-  }
-  return out;
-}
-
-export async function getPricesBySymbol(
-  symbols: string[],
-): Promise<Record<string, TokenPrice>> {
-  const now = Date.now();
-  const wanted = symbols
-    .map((s) => s.toUpperCase())
-    .filter((s) => SYMBOL_TO_ID[s]);
-  const out: Record<string, TokenPrice> = {};
-  const missingIds: string[] = [];
-
-  for (const sym of wanted) {
-    const id = SYMBOL_TO_ID[sym];
-    const c = cache.get(id);
-    if (c && now - c.ts < TTL) out[sym] = c.value;
-    else missingIds.push(id);
-  }
-
-  if (missingIds.length) {
+async function fetchFromApi(ids: string[]): Promise<MarketRow[]> {
+  const key = ids.slice().sort().join(",");
+  const existing = inflight.get(key);
+  if (existing) return existing;
+  const p = (async () => {
     try {
-      const fetched = await fetchIds([...new Set(missingIds)]);
-      for (const sym of wanted) {
-        const id = SYMBOL_TO_ID[sym];
-        if (fetched[id]) {
-          cache.set(id, { value: fetched[id], ts: now });
-          out[sym] = fetched[id];
-        }
-      }
+      const res = await fetch(`/api/markets?ids=${encodeURIComponent(ids.join(","))}`);
+      if (!res.ok) return [];
+      const json = (await res.json()) as { rows: MarketRow[] };
+      const now = Date.now();
+      for (const r of json.rows ?? []) cache.set(r.id, { row: r, ts: now });
+      return json.rows ?? [];
     } catch {
-      // serve whatever cache we have
+      return [];
+    } finally {
+      inflight.delete(key);
     }
-  }
-  return out;
-}
-
-export async function getPriceForSymbol(symbol: string): Promise<TokenPrice | null> {
-  const sym = symbol.toUpperCase();
-  const id = SYMBOL_TO_ID[sym];
-  if (!id) return null;
-  const now = Date.now();
-  const c = cache.get(id);
-  if (c && now - c.ts < TTL) return c.value;
-  if (inflight.has(id)) return inflight.get(id)!;
-  const p = fetchIds([id])
-    .then((r) => {
-      if (r[id]) {
-        cache.set(id, { value: r[id], ts: Date.now() });
-        return r[id];
-      }
-      return null;
-    })
-    .catch(() => null)
-    .finally(() => inflight.delete(id));
-  inflight.set(id, p);
+  })();
+  inflight.set(key, p);
   return p;
 }
 
-export interface MarketRow {
-  id: string;
-  symbol: string;
-  usd: number;
-  change24h: number;
-  marketCap: number;
-  spark: number[];
+export async function getMarkets(symbols: string[]): Promise<MarketRow[]> {
+  const wanted = symbols.map((s) => s.toUpperCase()).filter((s) => SYMBOL_TO_ID[s]);
+  const ids = wanted.map((s) => SYMBOL_TO_ID[s]);
+  const now = Date.now();
+  const fresh = ids.every((id) => {
+    const c = cache.get(id);
+    return c && now - c.ts < TTL;
+  });
+  if (!fresh) await fetchFromApi(ids);
+  // return in requested order, falling back to any cached value
+  return wanted
+    .map((s) => cache.get(SYMBOL_TO_ID[s])?.row)
+    .filter(Boolean) as MarketRow[];
 }
 
-let marketsCache: { rows: MarketRow[]; ts: number } | null = null;
-
-export async function getMarkets(symbols: string[]): Promise<MarketRow[]> {
-  if (marketsCache && Date.now() - marketsCache.ts < TTL) return marketsCache.rows;
-  const ids = symbols.map((s) => SYMBOL_TO_ID[s.toUpperCase()]).filter(Boolean);
-  const url =
-    `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(
-      ",",
-    )}&order=market_cap_desc&sparkline=true&price_change_percentage=24h`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(String(res.status));
-    const json = (await res.json()) as Array<{
-      id: string;
-      symbol: string;
-      current_price: number;
-      price_change_percentage_24h: number;
-      market_cap: number;
-      sparkline_in_7d?: { price: number[] };
-    }>;
-    // preserve the requested symbol order
-    const byId = new Map(json.map((r) => [r.id, r]));
-    const rows: MarketRow[] = [];
-    for (const sym of symbols.map((s) => s.toUpperCase())) {
-      const id = SYMBOL_TO_ID[sym];
-      const r = id && byId.get(id);
-      if (!r) continue;
-      const full = r.sparkline_in_7d?.price ?? [];
-      // downsample to ~28 points for a compact sparkline
-      const step = Math.max(1, Math.floor(full.length / 28));
-      const spark = full.filter((_, i) => i % step === 0);
-      rows.push({
-        id: r.id,
-        symbol: sym,
-        usd: r.current_price,
-        change24h: r.price_change_percentage_24h ?? 0,
-        marketCap: r.market_cap ?? 0,
-        spark,
-      });
-    }
-    marketsCache = { rows, ts: Date.now() };
-    return rows;
-  } catch {
-    return marketsCache?.rows ?? [];
-  }
+export async function getMarketForSymbol(symbol: string): Promise<MarketRow | null> {
+  const sym = symbol.toUpperCase();
+  const id = SYMBOL_TO_ID[sym];
+  if (!id) return null;
+  const c = cache.get(id);
+  if (c && Date.now() - c.ts < TTL) return c.row;
+  await fetchFromApi([id]);
+  return cache.get(id)?.row ?? null;
 }
 
 export function coingeckoUrl(id: string): string {
   return `https://www.coingecko.com/en/coins/${id}`;
 }
 
-const sparkCache = new Map<string, { row: MarketRow; ts: number }>();
-const sparkInflight = new Map<string, Promise<MarketRow | null>>();
-
-// Single-token market data (incl. sparkline) for a cashtag hovercard. Cached
-// separately from the rail so the two don't clobber each other.
-export async function getMarketForSymbol(symbol: string): Promise<MarketRow | null> {
-  const sym = symbol.toUpperCase();
-  const id = SYMBOL_TO_ID[sym];
-  if (!id) return null;
-  const c = sparkCache.get(id);
-  if (c && Date.now() - c.ts < TTL) return c.row;
-  if (sparkInflight.has(id)) return sparkInflight.get(id)!;
-  const p = (async () => {
-    try {
-      const rows = await fetchMarketsRaw([id], [sym]);
-      const row = rows[0] ?? null;
-      if (row) sparkCache.set(id, { row, ts: Date.now() });
-      return row;
-    } catch {
-      return null;
-    } finally {
-      sparkInflight.delete(id);
-    }
-  })();
-  sparkInflight.set(id, p);
-  return p;
-}
-
-async function fetchMarketsRaw(ids: string[], symbols: string[]): Promise<MarketRow[]> {
-  const url =
-    `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(
-      ",",
-    )}&sparkline=true&price_change_percentage=24h`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(String(res.status));
-  const json = (await res.json()) as Array<{
-    id: string;
-    current_price: number;
-    price_change_percentage_24h: number;
-    market_cap: number;
-    sparkline_in_7d?: { price: number[] };
-  }>;
-  const byId = new Map(json.map((r) => [r.id, r]));
-  const rows: MarketRow[] = [];
-  for (let i = 0; i < symbols.length; i++) {
-    const r = byId.get(ids[i]);
-    if (!r) continue;
-    const full = r.sparkline_in_7d?.price ?? [];
-    const step = Math.max(1, Math.floor(full.length / 28));
-    rows.push({
-      id: r.id,
-      symbol: symbols[i],
-      usd: r.current_price,
-      change24h: r.price_change_percentage_24h ?? 0,
-      marketCap: r.market_cap ?? 0,
-      spark: full.filter((_, j) => j % step === 0),
-    });
-  }
-  return rows;
-}
-
 export function formatPrice(n: number): string {
   if (n >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
   if (n >= 1) return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
   if (n >= 0.01) return n.toLocaleString("en-US", { maximumFractionDigits: 4 });
-  // tiny memecoin prices: show leading sig figs
   return n.toPrecision(3);
 }
 

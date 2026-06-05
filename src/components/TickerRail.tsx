@@ -67,7 +67,7 @@ export function TickerRail() {
       ) : (
         <div className="relative flex-1 overflow-hidden">
           {/* duplicated track for a seamless infinite conveyor */}
-          <div className="marquee-track">
+          <div className="conveyor-track">
             {[...rows, ...rows].map((row, i) => (
               <TickerItem key={`${row.id}-${i}`} row={row} />
             ))}
