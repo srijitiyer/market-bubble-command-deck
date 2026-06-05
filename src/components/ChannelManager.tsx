@@ -72,7 +72,7 @@ export function ChannelManager() {
               >
                 <PlatformIcon
                   platform={p}
-                  className="h-3 w-3"
+                  className="h-3.5 w-3.5"
                   style={{ color: on ? meta.accent : undefined }}
                 />
                 {meta.name}
@@ -95,12 +95,12 @@ export function ChannelManager() {
                     ? "channel"
                     : "handle"
               }
-              className="w-full rounded-lg bg-black/30 py-1.5 pl-6 pr-2 text-xs text-fg placeholder:text-faint outline-none ring-1 ring-border focus:ring-brand/50"
+              className="w-full rounded-md bg-bg-soft py-2 pl-6 pr-2 text-[13px] text-fg placeholder:text-faint outline-none ring-1 ring-border focus:ring-brand/50"
             />
           </div>
           <button
             type="submit"
-            className="flex items-center justify-center rounded-lg bg-brand px-2.5 text-white transition hover:brightness-110"
+            className="flex items-center justify-center rounded-md bg-white/[0.06] px-2.5 text-brand ring-1 ring-border transition-colors duration-150 hover:bg-white/[0.1]"
             title="Add source"
           >
             <Plus className="h-4 w-4" />
@@ -114,7 +114,7 @@ export function ChannelManager() {
             }
             placeholder="chatroom id (optional, if auto-resolve is blocked)"
             inputMode="numeric"
-            className="w-full rounded-lg bg-black/30 px-2.5 py-1.5 text-[11px] text-fg placeholder:text-faint outline-none ring-1 ring-border focus:ring-brand/50"
+            className="w-full rounded-md bg-bg-soft px-3 py-2 text-[11px] text-fg placeholder:text-faint outline-none ring-1 ring-border focus:ring-brand/50"
           />
         )}
       </form>
@@ -136,7 +136,7 @@ export function ChannelManager() {
               key={key}
               onClick={() => setActiveStream(key)}
               className={cn(
-                "group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition",
+                "group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors duration-150",
                 isActive ? "bg-white/[0.06]" : "hover:bg-white/[0.03]",
               )}
             >
@@ -210,7 +210,7 @@ export function ChannelManager() {
                 >
                   <PlatformIcon
                     platform={q.platform}
-                    className="h-3 w-3"
+                    className="h-3.5 w-3.5"
                     style={{ color: meta.accent }}
                   />
                   {q.channel}
