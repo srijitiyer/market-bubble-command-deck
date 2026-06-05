@@ -71,8 +71,10 @@ const MESSAGES = [
   "love the live viewer map",
 ];
 
-const EMOTES_TWITCH = ["Kappa", "PogChamp", "LUL", "monkaS", "EZ Clap", "KEKW", "Pog"];
-const EMOTES_KICK = ["KEKW", "emojiPog", "OMEGALUL", "catJAM", "PepeLaugh"];
+// Real global emote names (7TV / BTTV / Twitch first-party) so they render as
+// actual emote images in the feed.
+const EMOTES_TWITCH = ["Kappa", "PogChamp", "LUL", "monkaS", "EZ", "Clap", "SeemsGood", "Kreygasm"];
+const EMOTES_KICK = ["LuL", "FeelsGoodMan", "WAYTOODANK", "peepoHappy", "AYAYA", "FeelsStrongMan", "haHAA"];
 
 const PLATFORM_BADGES: Record<Platform, Badge[][]> = {
   twitch: [

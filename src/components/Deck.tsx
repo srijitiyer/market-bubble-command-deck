@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { MessageSquare } from "lucide-react";
 import { useDeck } from "@/lib/store";
 import { loadSession } from "@/lib/persist";
+import { loadEmotes } from "@/lib/emotes";
 import { TopBar } from "./TopBar";
 import { ChannelManager } from "./ChannelManager";
 import { StreamWatch } from "./StreamWatch";
@@ -33,8 +34,14 @@ export function Deck() {
   const channelCount = useDeck((s) => s.channels.length);
   const toggleDemo = useDeck((s) => s.toggleDemo);
   const refreshMeta = useDeck((s) => s.refreshMeta);
+  const setEmotesReady = useDeck((s) => s.setEmotesReady);
   const demoMode = useDeck((s) => s.demoMode);
   const seeded = useRef(false);
+
+  // Load global emote sets (7TV / BTTV / Twitch) once.
+  useEffect(() => {
+    void loadEmotes().then(setEmotesReady);
+  }, [setEmotesReady]);
 
   useEffect(() => {
     if (seeded.current || channelCount > 0) return;

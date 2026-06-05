@@ -4,24 +4,40 @@ import type { ChatMessage } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
 import { useDeck } from "@/lib/store";
 import { cn, formatClock, profileUrl } from "@/lib/utils";
+import { getEmote } from "@/lib/emotes";
 import { PlatformIcon } from "./icons";
 import { CashTag } from "./CashTag";
 
 function renderText(text: string) {
-  // Split on @mentions and $tickers, keep them as styled spans.
-  const parts = text.split(/(@[a-zA-Z0-9_]{2,25}|\$[A-Za-z]{2,8}\b)/g);
-  return parts.map((part, i) => {
-    if (/^@[a-zA-Z0-9_]{2,25}$/.test(part)) {
+  // Tokenize on whitespace so we can swap @mentions, $cashtags and emote words.
+  const tokens = text.split(/(\s+)/);
+  return tokens.map((tok, i) => {
+    if (/^\s+$/.test(tok)) return tok;
+    if (/^@[a-zA-Z0-9_]{2,25}$/.test(tok)) {
       return (
         <span key={i} className="text-brand-2 font-medium">
-          {part}
+          {tok}
         </span>
       );
     }
-    if (/^\$[A-Za-z]{2,8}$/.test(part)) {
-      return <CashTag key={i} symbol={part.slice(1)} />;
+    if (/^\$[A-Za-z]{2,8}$/.test(tok)) {
+      return <CashTag key={i} symbol={tok.slice(1)} />;
     }
-    return <span key={i}>{part}</span>;
+    const emote = getEmote(tok);
+    if (emote) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element -- tiny third-party emote, next/image is inappropriate
+        <img
+          key={i}
+          src={emote.url}
+          alt={tok}
+          title={tok}
+          loading="lazy"
+          className="inline-block h-[22px] w-auto max-w-none translate-y-[-1px] align-middle"
+        />
+      );
+    }
+    return <span key={i}>{tok}</span>;
   });
 }
 
@@ -46,6 +62,8 @@ function Badges({ msg }: { msg: ChatMessage }) {
 
 function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
   const meta = PLATFORMS[msg.platform];
+  // Subscribe so rows re-render once the global emote sets finish loading.
+  useDeck((s) => s.emotesReady);
 
   if (msg.isHost) {
     return (

@@ -46,6 +46,7 @@ interface DeckState {
   soundOn: boolean;
   activeStream: string | null; // key of channel being watched large
   featured: ChatMessage | null; // message pinned to the featured/overlay slot
+  emotesReady: boolean; // flips true once global emote sets load
 
   // actions
   addChannel: (
@@ -71,6 +72,7 @@ interface DeckState {
   broadcast: (text: string) => void;
   hydrate: (channels: PersistedChannel[], demoMode: boolean, soundOn: boolean) => void;
   setFeatured: (msg: ChatMessage | null) => void;
+  setEmotesReady: () => void;
 }
 
 export const channelKey = (platform: Platform, channel: string) =>
@@ -194,6 +196,7 @@ export const useDeck = create<DeckState>((set, get) => ({
   soundOn: false,
   activeStream: null,
   featured: null,
+  emotesReady: false,
 
   addChannel: (platform, channel, opts) => {
     const clean = channel.toLowerCase().replace(/^[#@]/, "").trim();
@@ -390,6 +393,8 @@ export const useDeck = create<DeckState>((set, get) => ({
   setActiveStream: (key) => set({ activeStream: key }),
 
   setFeatured: (msg) => set({ featured: msg }),
+
+  setEmotesReady: () => set({ emotesReady: true }),
 
   broadcast: (text) => {
     const clean = text.trim();
