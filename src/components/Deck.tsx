@@ -147,7 +147,7 @@ export function Deck() {
 
   const rightRail = (
     <aside className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto">
-      <section className="panel flex flex-col overflow-hidden">
+      <section className="panel flex shrink-0 flex-col overflow-hidden">
         <PanelHeader
           title="Watch"
           aside={<span className="eyebrow">native multistream</span>}
@@ -156,7 +156,7 @@ export function Deck() {
           <StreamWatch />
         </div>
       </section>
-      <section className="panel flex flex-col">
+      <section className="panel flex shrink-0 flex-col">
         <PanelHeader title="Intelligence" />
         <div className="flex flex-col gap-6 p-4">
           <StatsDeck />
