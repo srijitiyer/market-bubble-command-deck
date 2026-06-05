@@ -26,7 +26,7 @@ export function DemoTour() {
       c.style.cssText =
         "position:fixed;left:0;top:0;width:26px;height:26px;z-index:100002;pointer-events:none;" +
         `transition:transform ${CUR_MS}ms ${EASE},opacity .35s;transform:translate(50vw,46vh);` +
-        "filter:drop-shadow(0 0 6px rgba(184,139,255,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
+        "filter:drop-shadow(0 0 6px rgba(176,139,242,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
       c.innerHTML =
         '<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M5 3 L5 20 L9.5 15.2 L12.8 22 L15.6 20.7 L12.3 14 L19 14 Z" fill="#fff" stroke="#0a0a0a" stroke-width="1.4" stroke-linejoin="round"/></svg>';
       document.body.appendChild(c);
@@ -45,7 +45,7 @@ export function DemoTour() {
       const r = document.createElement("div");
       r.style.cssText =
         `position:fixed;left:${cx()}px;top:${cy()}px;width:14px;height:14px;z-index:100001;` +
-        "border-radius:999px;border:2px solid rgba(184,139,255,.9);pointer-events:none;" +
+        "border-radius:999px;border:2px solid rgba(176,139,242,.9);pointer-events:none;" +
         "transform:translate(-2px,-2px) scale(1);opacity:.9;transition:transform .5s ease-out,opacity .5s ease-out";
       document.body.appendChild(r);
       requestAnimationFrame(() => {
@@ -104,9 +104,9 @@ export function DemoTour() {
         document.body.appendChild(capEl);
       }
       capEl.innerHTML =
-        '<span style="width:3px;height:30px;border-radius:3px;background:linear-gradient(180deg,#b88bff,#8aa0ff)"></span>' +
+        '<span style="width:3px;height:30px;border-radius:3px;background:linear-gradient(180deg,#b08bf2,#8aa0ff)"></span>' +
         '<span style="display:flex;flex-direction:column;gap:3px">' +
-        `<span style="font:600 9px/1 ui-sans-serif,system-ui;letter-spacing:.14em;text-transform:uppercase;color:#b88bff">${kicker}</span>` +
+        `<span style="font:600 9px/1 ui-sans-serif,system-ui;letter-spacing:.14em;text-transform:uppercase;color:#b08bf2">${kicker}</span>` +
         `<span style="font:600 16px/1.1 ui-sans-serif,system-ui;letter-spacing:-.01em;color:#ecedf1;white-space:nowrap">${text}</span>` +
         "</span>";
       requestAnimationFrame(() => {
@@ -152,6 +152,10 @@ export function DemoTour() {
       if (!stage) return;
       const deck = useDeck.getState();
 
+      // Make sure the feed is alive for the recording — flip on synthetic
+      // traffic across every source if it isn't already running.
+      if (!deck.demoMode) deck.toggleDemo();
+
       // INTRO — replay the cinematic cold-open so it's part of every recording.
       // On ?tour=1 the page-load intro already played, so we skip the replay.
       if (!skipIntro) {
@@ -166,7 +170,7 @@ export function DemoTour() {
       cur = buildCursor();
 
       // BEAT 1 — hero
-      showCaption("Market Bubble", "Twitch + Kick + X — one live chat");
+      showCaption("Market Bubble", "Twitch + Kick + X · one live chat");
       await move(window.innerWidth * 0.5, window.innerHeight * 0.52);
       await sleep(2600);
       if (cancelled) return;
@@ -235,7 +239,7 @@ export function DemoTour() {
       if (cancelled) return;
 
       // BEAT 5 — resize panels
-      showCaption("Your layout", "Resize anything — drag to taste");
+      showCaption("Your layout", "Resize anything · drag to taste");
       const sep = document.querySelectorAll("[data-separator]")[1];
       if (sep) await moveToEl(sep);
       const setL = (
@@ -272,7 +276,7 @@ export function DemoTour() {
       if (cancelled) return;
 
       // BEAT 6 — command palette (no zoom — it's a fixed modal)
-      showCaption("Command deck", "⌘K — drive the whole thing");
+      showCaption("Command deck", "⌘K · drive the whole thing");
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
       await sleep(850);
       const pal = document.querySelector<HTMLInputElement>(

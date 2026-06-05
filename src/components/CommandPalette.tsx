@@ -89,6 +89,12 @@ export function CommandPalette() {
         run: () => act().setMode("tickers"),
       },
       {
+        id: "mode-hosts",
+        label: "Filter: hosts only",
+        icon: <Shield className="h-4 w-4" />,
+        run: () => act().setMode("hosts"),
+      },
+      {
         id: "mode-mods",
         label: "Filter: mods only",
         icon: <Shield className="h-4 w-4" />,

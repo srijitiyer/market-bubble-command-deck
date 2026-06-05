@@ -78,7 +78,7 @@ export function AudiencePanel() {
               style={{
                 background: "rgba(255,255,255,0.04)",
                 color: v.color,
-                boxShadow: `inset 0 0 0 1.5px ${meta.accent}`,
+                boxShadow: `inset 0 0 0 1.5px ${meta.muted}`,
               }}
             >
               {v.displayName.slice(0, 1).toUpperCase()}
@@ -108,7 +108,7 @@ export function AudiencePanel() {
               style={{
                 background: "rgba(255,255,255,0.05)",
                 color: hover.color,
-                boxShadow: `inset 0 0 0 1.5px ${PLATFORMS[hover.platform].accent}`,
+                boxShadow: `inset 0 0 0 1.5px ${PLATFORMS[hover.platform].muted}`,
               }}
             >
               {hover.displayName.slice(0, 1).toUpperCase()}

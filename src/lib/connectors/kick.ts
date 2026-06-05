@@ -1,5 +1,5 @@
 import type { Badge, ChatMessage, ConnectionState } from "@/lib/types";
-import { colorFromString } from "@/lib/utils";
+import { colorFromString, normalizeUserColor } from "@/lib/utils";
 import {
   type Connector,
   type ConnectorCallbacks,
@@ -207,7 +207,9 @@ export function parseKickMessage(
   const isBroadcaster = badges.some(
     (b) => b.type === "broadcaster" || b.type === "host",
   );
-  const color = sender.identity?.color || colorFromString(username);
+  const color = sender.identity?.color
+    ? normalizeUserColor(sender.identity.color)
+    : colorFromString(username);
   const { mentions, tickers } = extractEntities(parsed.content);
 
   return {

@@ -9,9 +9,9 @@ import type { Filters } from "@/lib/store";
 
 const MODES: { id: Filters["mode"]; label: string }[] = [
   { id: "all", label: "All" },
+  { id: "hosts", label: "Hosts" },
   { id: "mentions", label: "Mentions" },
   { id: "tickers", label: "Tickers" },
-  { id: "mods", label: "Mods" },
 ];
 
 export function FeedToolbar() {

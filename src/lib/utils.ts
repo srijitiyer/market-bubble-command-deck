@@ -41,13 +41,56 @@ export function profileUrl(platform: Platform, username: string): string {
   return `https://x.com/${u}`;
 }
 
-// Deterministic color from a string (stable per-username fallback color)
+// Curated username palette: one family at fixed lightness (~74%) and saturation
+// (~50%) so names read as a set, not a rainbow. All pass 4.5:1 on the dark bg.
+const USERNAME_COLORS = [
+  "#e090a0", // rose
+  "#e0a574", // amber
+  "#d6bd6e", // gold
+  "#a9cf7e", // sage
+  "#74cc9e", // mint
+  "#6fccc4", // teal
+  "#76bdd9", // sky
+  "#8ab0e6", // blue
+  "#a99ce6", // periwinkle
+  "#c298de", // lavender
+  "#d68fce", // orchid
+  "#e08eae", // pink
+];
+
+// Deterministic color from a string (stable per-username from the curated set)
 export function colorFromString(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash) % 360;
-  // Softer, more cohesive than full-neon; lightness clamped for contrast on dark.
-  return `hsl(${hue} 58% 68%)`;
+  return USERNAME_COLORS[Math.abs(hash) % USERNAME_COLORS.length];
+}
+
+// Pull any user-supplied hex (e.g. Twitch's neon IRC colors) into our family
+// band: keep the hue, cap saturation and clamp lightness for contrast on dark.
+// This is the trick that stops the feed looking like a rainbow ransom note.
+export function normalizeUserColor(hex: string): string {
+  const m = /^#?([\da-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) / 255;
+  const g = ((n >> 8) & 0xff) / 255;
+  const b = (n & 0xff) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  const cs = Math.min(s, 0.55);
+  const cl = 0.66 + 0.1 * l; // map any lightness into ~0.66-0.76
+  return `hsl(${Math.round(h * 360)} ${Math.round(cs * 100)}% ${Math.round(cl * 100)}%)`;
 }

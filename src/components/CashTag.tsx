@@ -41,12 +41,12 @@ export function CashTag({ symbol }: { symbol: string }) {
           href={coingeckoUrl(SYMBOL_TO_ID[sym])}
           target="_blank"
           rel="noreferrer"
-          className="mono rounded bg-[rgba(46,189,133,0.12)] px-1 text-[0.92em] font-semibold text-[#2ebd85] transition hover:bg-[rgba(46,189,133,0.22)]"
+          className="mono rounded bg-brand/[0.1] px-1 text-[0.92em] font-medium text-brand transition-colors hover:bg-brand/[0.18]"
         >
           ${sym}
         </a>
       ) : (
-        <span className="mono cursor-default rounded bg-[rgba(46,189,133,0.1)] px-1 text-[0.92em] font-semibold text-[#2ebd85]/80">
+        <span className="mono cursor-default rounded bg-white/[0.05] px-1 text-[0.92em] font-medium text-dim">
           ${sym}
         </span>
       )}

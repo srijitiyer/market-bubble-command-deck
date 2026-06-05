@@ -61,8 +61,10 @@ export interface ConnectionInfo {
 export interface PlatformMeta {
   id: Platform;
   name: string;
-  // brand color used for accents / badges
+  // full-saturation brand color — use ONLY on <=16px glyphs/pips
   accent: string;
+  // chroma-capped variant for anything larger (rails, labels, bars, dots)
+  muted: string;
   // a darker tinted background for chips
   tint: string;
   glow: string;
@@ -73,22 +75,25 @@ export const PLATFORMS: Record<Platform, PlatformMeta> = {
     id: "twitch",
     name: "Twitch",
     accent: "#a970ff",
-    tint: "rgba(145,70,255,0.14)",
-    glow: "rgba(145,70,255,0.45)",
+    muted: "#9a7fd0",
+    tint: "rgba(145,70,255,0.13)",
+    glow: "rgba(145,70,255,0.4)",
   },
   kick: {
     id: "kick",
     name: "Kick",
     accent: "#53fc18",
-    tint: "rgba(83,252,24,0.12)",
-    glow: "rgba(83,252,24,0.4)",
+    muted: "#74bf6a",
+    tint: "rgba(116,191,106,0.12)",
+    glow: "rgba(116,191,106,0.38)",
   },
   x: {
     id: "x",
     name: "X",
     accent: "#e7e9ea",
-    tint: "rgba(231,233,234,0.10)",
-    glow: "rgba(120,160,255,0.35)",
+    muted: "#b0b5bf",
+    tint: "rgba(231,233,234,0.09)",
+    glow: "rgba(120,160,255,0.32)",
   },
 };
 

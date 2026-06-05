@@ -27,18 +27,22 @@
   --color-fg-faint: #6b6e7a;
 
   /* one rationed accent (brand violet) */
-  --color-brand: #b88bff;
+  --color-brand: #b08bf2;
   --color-brand-2: #8aa0ff;
 
-  /* platform accents — used only on rails / icons / badges */
+  /* platform — FULL neon only for tiny (<=16px) glyphs/pips */
   --color-twitch: #a970ff;
   --color-kick: #53fc18;
   --color-x: #e7e9ea;
+  /* platform — MUTED (chroma-capped) for anything larger: rails, chips, labels */
+  --color-twitch-muted: #9a7fd0;
+  --color-kick-muted: #74bf6a;
+  --color-x-muted: #b0b5bf;
 
-  /* market semantics — only on numbers / deltas */
-  --color-pos: #2ebd85;
-  --color-neg: #f6465d;
-  --color-warn: #f5a623;
+  /* market semantics — only on numbers / deltas; pos cooler than Kick green */
+  --color-pos: #3fc28a;
+  --color-neg: #f0676a;
+  --color-warn: #e0b44e;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

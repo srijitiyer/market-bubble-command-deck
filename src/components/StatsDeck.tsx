@@ -79,7 +79,7 @@ export function StatsDeck() {
             return (
               <div
                 key={p}
-                style={{ width: `${pct}%`, background: PLATFORMS[p].accent }}
+                style={{ width: `${pct}%`, background: PLATFORMS[p].muted }}
                 className="h-full transition-all duration-500"
               />
             );
@@ -151,8 +151,8 @@ export function TopChatters() {
                       className="block h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${Math.max(8, (c.count / maxCount) * 100)}%`,
-                        background: meta.accent,
-                        opacity: 0.55,
+                        background: meta.muted,
+                        opacity: 0.6,
                       }}
                     />
                   </span>

@@ -1,5 +1,5 @@
 import type { Badge, ChatMessage, ConnectionState } from "@/lib/types";
-import { colorFromString } from "@/lib/utils";
+import { colorFromString, normalizeUserColor } from "@/lib/utils";
 import {
   type Connector,
   type ConnectorCallbacks,
@@ -185,7 +185,9 @@ export function parsePrivmsg(
   const isVip = badges.some((b) => b.type === "vip");
   const isBroadcaster = badges.some((b) => b.type === "broadcaster");
   const displayName = tags["display-name"] || nick;
-  const color = tags["color"] || colorFromString(displayName);
+  const color = tags["color"]
+    ? normalizeUserColor(tags["color"])
+    : colorFromString(displayName);
   const { mentions, tickers } = extractEntities(text);
 
   return {

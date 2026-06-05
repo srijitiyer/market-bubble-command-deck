@@ -30,7 +30,7 @@ const RATE_WINDOW_MS = 60_000;
 export interface Filters {
   platforms: Record<Platform, boolean>;
   search: string;
-  mode: "all" | "mentions" | "tickers" | "mods";
+  mode: "all" | "mentions" | "tickers" | "mods" | "hosts";
 }
 
 interface DeckState {
@@ -406,7 +406,7 @@ export const useDeck = create<DeckState>((set, get) => ({
       channel: "shared",
       username: "MarketBubble",
       displayName: "Market Bubble",
-      color: "#b88bff",
+      color: "#b08bf2",
       text: clean,
       badges: [{ type: "broadcaster" }],
       timestamp: Date.now(),
@@ -458,6 +458,7 @@ export function filterMessages(state: DeckState): ChatMessage[] {
     if (filters.mode === "tickers" && !(m.tickers && m.tickers.length))
       return false;
     if (filters.mode === "mods" && !(m.isMod || m.isBroadcaster)) return false;
+    if (filters.mode === "hosts" && !(m.isBroadcaster || m.isHost)) return false;
     if (q) {
       const hay = (m.text + " " + m.displayName).toLowerCase();
       if (!hay.includes(q)) return false;

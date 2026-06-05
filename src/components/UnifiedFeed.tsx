@@ -5,7 +5,20 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useShallow } from "zustand/react/shallow";
 import { ArrowDown, Pause } from "lucide-react";
 import { useDeck, filterMessages } from "@/lib/store";
+import type { ChatMessage } from "@/lib/types";
 import { MessageRow } from "./MessageRow";
+
+// Collapse consecutive messages from the same author+platform within 60s into a
+// single visual group (IRC/Discord-compact): only the head row shows glyph+name.
+function isContinuation(prev: ChatMessage | undefined, cur: ChatMessage) {
+  if (!prev || prev.isHost || cur.isHost) return false;
+  return (
+    prev.platform === cur.platform &&
+    prev.username === cur.username &&
+    prev.channel === cur.channel &&
+    cur.timestamp - prev.timestamp < 60_000
+  );
+}
 
 export function UnifiedFeed() {
   const messages = useDeck(useShallow(filterMessages));
@@ -20,7 +33,7 @@ export function UnifiedFeed() {
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 34,
+    estimateSize: () => 26,
     overscan: 18,
     getItemKey: (i) => messages[i]?.id ?? i,
   });
@@ -97,6 +110,9 @@ export function UnifiedFeed() {
                 <MessageRow
                   msg={messages[vi.index]}
                   fresh={vi.index >= messages.length - 4}
+                  firstOfGroup={
+                    !isContinuation(messages[vi.index - 1], messages[vi.index])
+                  }
                 />
               </div>
             ))}
