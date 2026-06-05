@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageSquare } from "lucide-react";
+import {
+  Group,
+  Panel,
+  type GroupImperativeHandle,
+} from "react-resizable-panels";
 import { useDeck } from "@/lib/store";
 import { loadSession } from "@/lib/persist";
 import { loadEmotes } from "@/lib/emotes";
@@ -19,15 +24,27 @@ import { SharedComposer } from "./SharedComposer";
 import { LandingTitle } from "./LandingTitle";
 import { FeaturedBar } from "./FeaturedBar";
 import { CommandPalette } from "./CommandPalette";
+import { ResizeHandle } from "./ResizeHandle";
 
-// Channels seeded on first load so the deck is alive the moment it opens.
-// Demo mode is on by default, so these run synthetic traffic; toggle Demo off
-// and add a live channel (e.g. twitch / a live streamer) to ingest real chat.
 const SEED = [
   { platform: "twitch" as const, channel: "marketbubble" },
   { platform: "kick" as const, channel: "marketbubble" },
   { platform: "x" as const, channel: "marketbubble" },
 ];
+
+const LAYOUT_KEY = "mb-deck.layout.v1";
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isDesktop;
+}
 
 export function Deck() {
   const addChannel = useDeck((s) => s.addChannel);
@@ -38,8 +55,9 @@ export function Deck() {
   const setEmotesReady = useDeck((s) => s.setEmotesReady);
   const demoMode = useDeck((s) => s.demoMode);
   const seeded = useRef(false);
+  const isDesktop = useIsDesktop();
+  const groupRef = useRef<GroupImperativeHandle | null>(null);
 
-  // Load global emote sets (7TV / BTTV / Twitch) once.
   useEffect(() => {
     void loadEmotes().then(setEmotesReady);
   }, [setEmotesReady]);
@@ -47,7 +65,6 @@ export function Deck() {
   useEffect(() => {
     if (seeded.current || channelCount > 0) return;
     seeded.current = true;
-    // Restore the user's last session if any; otherwise seed the demo.
     const session = loadSession();
     if (session && session.channels.length) {
       hydrate(session.channels, session.demoMode, session.soundOn);
@@ -56,7 +73,6 @@ export function Deck() {
     }
   }, [addChannel, hydrate, channelCount]);
 
-  // Poll real Twitch stream metadata (live/viewers/title) while not in demo.
   useEffect(() => {
     if (demoMode) return;
     refreshMeta();
@@ -64,7 +80,6 @@ export function Deck() {
     return () => clearInterval(id);
   }, [demoMode, refreshMeta, channelCount]);
 
-  // Power-user shortcuts: "/" focuses search, "d" toggles demo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -85,6 +100,68 @@ export function Deck() {
     return () => window.removeEventListener("keydown", onKey);
   }, [toggleDemo]);
 
+  // Restore the saved panel layout once the desktop group is mounted.
+  useEffect(() => {
+    if (!isDesktop) return;
+    const saved =
+      typeof window !== "undefined" ? localStorage.getItem(LAYOUT_KEY) : null;
+    if (!saved) return;
+    try {
+      const layout = JSON.parse(saved);
+      // wait a frame so the Group is mounted
+      requestAnimationFrame(() => groupRef.current?.setLayout(layout));
+    } catch {
+      // ignore malformed
+    }
+  }, [isDesktop]);
+
+  const leftRail = (
+    <aside className="panel flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-3.5">
+      <ChannelManager />
+      <div className="hairline" />
+      <SourceLegend />
+    </aside>
+  );
+
+  const centerMain = (
+    <main className="panel flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+        <MessageSquare className="h-4 w-4 text-brand" />
+        <h1 className="text-sm font-semibold">Unified Feed</h1>
+        <span className="hidden text-[11px] text-faint sm:inline">
+          every chat, one stream, source-labeled
+        </span>
+      </div>
+      <FeedToolbar />
+      <FeaturedBar />
+      <div className="min-h-0 flex-1">
+        <UnifiedFeed />
+      </div>
+      <SharedComposer />
+    </main>
+  );
+
+  const rightRail = (
+    <aside className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto">
+      <section className="panel p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="eyebrow">Watch</span>
+          <span className="eyebrow">native multistream</span>
+        </div>
+        <StreamWatch />
+      </section>
+      <section className="panel flex flex-col gap-4 p-3.5">
+        <StatsDeck />
+        <div className="hairline" />
+        <SentimentMeter />
+        <div className="hairline" />
+        <AudiencePanel />
+        <div className="hairline" />
+        <TopChatters />
+      </section>
+    </aside>
+  );
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <LandingTitle />
@@ -94,54 +171,46 @@ export function Deck() {
         <TickerRail />
       </div>
 
-      <div className="relative z-10 grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-[248px_minmax(0,1fr)] xl:grid-cols-[248px_minmax(0,1fr)_392px]">
-        {/* Left rail — sources */}
-        <aside className="panel hidden min-h-0 flex-col gap-4 overflow-y-auto p-3.5 lg:flex">
-          <ChannelManager />
-          <div className="hairline" />
-          <SourceLegend />
-        </aside>
-
-        {/* Center — unified feed (hero) */}
-        <main className="panel flex min-h-0 flex-col overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-            <MessageSquare className="h-4 w-4 text-brand" />
-            <h1 className="text-sm font-semibold">Unified Feed</h1>
-            <span className="hidden text-[11px] text-faint sm:inline">
-              every chat, one stream, source-labeled
-            </span>
-          </div>
-          <FeedToolbar />
-          <FeaturedBar />
-          <div className="min-h-0 flex-1">
-            <UnifiedFeed />
-          </div>
-          <SharedComposer />
-        </main>
-
-        {/* Right rail — watch + intelligence */}
-        <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto xl:flex">
-          <section className="panel p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-dim">
-                Watch
-              </h2>
-              <span className="text-[10px] text-faint">native multistream</span>
-            </div>
-            <StreamWatch />
-          </section>
-
-          <section className="panel flex flex-col gap-4 p-3.5">
-            <StatsDeck />
-            <div className="hairline" />
-            <SentimentMeter />
-            <div className="hairline" />
-            <AudiencePanel />
-            <div className="hairline" />
-            <TopChatters />
-          </section>
-        </aside>
-      </div>
+      {isDesktop ? (
+        <Group
+          orientation="horizontal"
+          groupRef={groupRef}
+          onLayoutChanged={(layout) => {
+            try {
+              localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+            } catch {
+              // ignore
+            }
+          }}
+          className="relative z-10 min-h-0 flex-1 p-3"
+        >
+          <Panel
+            id="left"
+            defaultSize="17%"
+            minSize="13%"
+            maxSize="26%"
+            className="min-w-0"
+          >
+            {leftRail}
+          </Panel>
+          <ResizeHandle />
+          <Panel id="center" defaultSize="53%" minSize="34%" className="min-w-0">
+            {centerMain}
+          </Panel>
+          <ResizeHandle />
+          <Panel
+            id="right"
+            defaultSize="30%"
+            minSize="22%"
+            maxSize="42%"
+            className="min-w-0"
+          >
+            {rightRail}
+          </Panel>
+        </Group>
+      ) : (
+        <div className="relative z-10 min-h-0 flex-1 p-3">{centerMain}</div>
+      )}
     </div>
   );
 }
