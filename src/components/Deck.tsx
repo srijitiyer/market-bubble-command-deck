@@ -25,6 +25,7 @@ import { FeaturedBar } from "./FeaturedBar";
 import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
 import { PanelHeader } from "./PanelHeader";
+import { DemoTour } from "./DemoTour";
 
 const SEED = [
   { platform: "twitch" as const, channel: "marketbubble" },
@@ -61,6 +62,15 @@ export function Deck() {
   useEffect(() => {
     void loadEmotes().then(setEmotesReady);
   }, [setEmotesReady]);
+
+  // Expose the panel-layout setter for scripted demo walkthroughs (harmless).
+  useEffect(() => {
+    (window as unknown as { __mbSetLayout?: (l: Record<string, number>) => void }).__mbSetLayout =
+      (l) => groupRef.current?.setLayout(l);
+    return () => {
+      delete (window as unknown as { __mbSetLayout?: unknown }).__mbSetLayout;
+    };
+  }, []);
 
   useEffect(() => {
     if (seeded.current || channelCount > 0) return;
@@ -172,6 +182,7 @@ export function Deck() {
     <div className="flex h-dvh flex-col overflow-hidden">
       <LandingTitle />
       <CommandPalette />
+      <DemoTour />
       <TopBar />
       <div className="relative z-10 border-b border-border bg-bg-soft/40">
         <TickerRail />
