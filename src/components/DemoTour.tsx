@@ -148,9 +148,21 @@ export function DemoTour() {
     };
 
     // ---- choreography -----------------------------------------------------
-    const run = async () => {
+    const run = async (skipIntro = false) => {
       if (!stage) return;
       const deck = useDeck.getState();
+
+      // INTRO — replay the cinematic cold-open so it's part of every recording.
+      // On ?tour=1 the page-load intro already played, so we skip the replay.
+      if (!skipIntro) {
+        const playIntro = (window as unknown as { __playIntro?: () => void })
+          .__playIntro;
+        if (playIntro) {
+          playIntro();
+          await sleep(3600);
+        }
+        if (cancelled) return;
+      }
       cur = buildCursor();
 
       // BEAT 1 — hero
@@ -294,7 +306,8 @@ export function DemoTour() {
 
     let auto: ReturnType<typeof setTimeout> | undefined;
     if (typeof window !== "undefined" && /[?&]tour=1\b/.test(window.location.search)) {
-      auto = setTimeout(() => void run(), 4200);
+      // page-load intro plays first (~3.3s); start beats just after it fades
+      auto = setTimeout(() => void run(true), 4000);
     }
     return () => {
       cancelled = true;

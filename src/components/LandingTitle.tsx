@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BubbleMark, PlatformIcon } from "./icons";
 import { PLATFORMS, type Platform } from "@/lib/types";
 
 // Cinematic cold-open: three platform glyphs fly in and converge, the orb bursts
 // out of the merge point, then the wordmark + tagline resolve — and it all fades
-// to reveal the live deck underneath.
+// to reveal the live deck. Plays on load and is replayable via window.__playIntro
+// (the demo tour replays it so the intro is always captured in recordings).
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 const GLYPHS: { p: Platform; from: string }[] = [
@@ -16,30 +17,34 @@ const GLYPHS: { p: Platform; from: string }[] = [
 ];
 
 export function LandingTitle() {
-  // phases: 0 enter · 1 converge · 2 burst · 3 text · 4 out
-  const [phase, setPhase] = useState(0);
-  const [gone, setGone] = useState(false);
+  // -1 hidden · 0 enter · 1 converge · 2 burst · 3 text · 4 out
+  const [phase, setPhase] = useState(-1);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  useEffect(() => {
-    const timers = [
+  const play = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    setPhase(0);
+    timers.current = [
       setTimeout(() => setPhase(1), 120),
       setTimeout(() => setPhase(2), 900),
       setTimeout(() => setPhase(3), 1320),
       setTimeout(() => setPhase(4), 2700),
-      setTimeout(() => setGone(true), 3300),
+      setTimeout(() => setPhase(-1), 3300),
     ];
-    return () => timers.forEach(clearTimeout);
   }, []);
 
-  if (gone) return null;
+  useEffect(() => {
+    (window as unknown as { __playIntro?: () => void }).__playIntro = play;
+    play(); // intro on every load (incl. ?tour=1 cold-open)
+    return () => timers.current.forEach(clearTimeout);
+  }, [play]);
+
+  if (phase < 0) return null;
 
   return (
     <div
       className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
-      style={{
-        opacity: phase >= 4 ? 0 : 1,
-        transition: "opacity 0.55s ease",
-      }}
+      style={{ opacity: phase >= 4 ? 0 : 1, transition: "opacity 0.55s ease" }}
     >
       <div
         className="absolute inset-0"
@@ -51,9 +56,7 @@ export function LandingTitle() {
       />
 
       <div className="relative flex flex-col items-center">
-        {/* convergence stage */}
         <div className="relative flex h-24 w-24 items-center justify-center">
-          {/* burst glow */}
           <span
             className="absolute rounded-full"
             style={{
@@ -66,7 +69,6 @@ export function LandingTitle() {
               transition: `opacity .6s ease, transform .7s ${EASE}`,
             }}
           />
-          {/* platform glyphs converging */}
           {GLYPHS.map(({ p, from }) => {
             const meta = PLATFORMS[p];
             const converged = phase >= 1;
@@ -95,7 +97,6 @@ export function LandingTitle() {
               </span>
             );
           })}
-          {/* the orb bursting from the merge point */}
           <BubbleMark
             className="relative h-20 w-20 drop-shadow-[0_4px_24px_rgba(184,139,255,0.6)]"
             style={{
@@ -106,7 +107,6 @@ export function LandingTitle() {
           />
         </div>
 
-        {/* wordmark + tagline */}
         <div
           className="mt-6 text-center"
           style={{
