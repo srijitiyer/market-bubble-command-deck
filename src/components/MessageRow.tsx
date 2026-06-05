@@ -4,6 +4,7 @@ import type { ChatMessage } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
 import { cn, formatClock } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
+import { CashTag } from "./CashTag";
 
 function renderText(text: string) {
   // Split on @mentions and $tickers, keep them as styled spans.
@@ -17,14 +18,7 @@ function renderText(text: string) {
       );
     }
     if (/^\$[A-Za-z]{2,8}$/.test(part)) {
-      return (
-        <span
-          key={i}
-          className="mono rounded bg-[rgba(46,230,166,0.12)] px-1 text-[0.92em] font-semibold text-[#2ee6a6]"
-        >
-          {part.toUpperCase()}
-        </span>
-      );
+      return <CashTag key={i} symbol={part.slice(1)} />;
     }
     return <span key={i}>{part}</span>;
   });
