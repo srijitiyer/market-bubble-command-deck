@@ -24,6 +24,7 @@ const SEED = [
 export function Deck() {
   const addChannel = useDeck((s) => s.addChannel);
   const channelCount = useDeck((s) => s.channels.length);
+  const toggleDemo = useDeck((s) => s.toggleDemo);
   const seeded = useRef(false);
 
   useEffect(() => {
@@ -31,6 +32,27 @@ export function Deck() {
     seeded.current = true;
     for (const s of SEED) addChannel(s.platform, s.channel);
   }, [addChannel, channelCount]);
+
+  // Power-user shortcuts: "/" focuses search, "d" toggles demo.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+      if (typing) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        document.getElementById("feed-search")?.focus();
+      } else if (e.key === "d" || e.key === "D") {
+        toggleDemo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleDemo]);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">

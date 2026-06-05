@@ -71,9 +71,10 @@ export function FeedToolbar() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
           <input
+            id="feed-search"
             value={filters.search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filter messages or users…"
+            placeholder="Filter messages or users…  ( / )"
             className="w-full rounded-lg bg-black/30 py-1.5 pl-8 pr-7 text-xs text-fg placeholder:text-faint outline-none ring-1 ring-border transition focus:ring-brand/50"
           />
           {filters.search && (
