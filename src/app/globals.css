@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+/* ----------------------------------------------------------------------------
+   Market Bubble — Command Deck design system
+   Dark "trading-desk" aesthetic: near-black canvas, glass panels, neon platform
+   accents (Twitch violet / Kick green / X white-blue), mono numerals.
+---------------------------------------------------------------------------- */
+
+@theme inline {
+  --color-bg: #06070b;
+  --color-bg-soft: #0a0c12;
+  --color-panel: rgba(255, 255, 255, 0.025);
+  --color-panel-strong: rgba(255, 255, 255, 0.045);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-fg: #eef1f6;
+  --color-fg-dim: #99a0ad;
+  --color-fg-faint: #5b616e;
+
+  --color-brand: #b16cff;
+  --color-brand-2: #6c8cff;
+
+  --color-twitch: #a970ff;
+  --color-kick: #53fc18;
+  --color-x: #e7e9ea;
+
+  --color-pos: #2ee6a6;
+  --color-neg: #ff5c7c;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-xl2: 1.25rem;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Ambient light: faint radial glows behind the deck */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60rem 40rem at 12% -10%, rgba(177, 108, 255, 0.12), transparent 60%),
+    radial-gradient(50rem 36rem at 100% 0%, rgba(108, 140, 255, 0.10), transparent 55%),
+    radial-gradient(46rem 32rem at 70% 110%, rgba(83, 252, 24, 0.06), transparent 60%);
+}
+
+/* Fine grain noise to kill banding on the gradients */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- scrollbars ---------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* --- reusable component classes ----------------------------------------- */
+@layer components {
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl2);
+    backdrop-filter: blur(12px);
+  }
+  .panel-inset {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--color-border);
+    border-radius: 0.9rem;
+  }
+  .mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .text-dim {
+    color: var(--color-fg-dim);
+  }
+  .text-faint {
+    color: var(--color-fg-faint);
+  }
+}
+
+/* --- animations ---------------------------------------------------------- */
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-msg-in {
+  animation: msg-in 0.18s ease-out;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+.live-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes float-bubble {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(-130px) scale(1.25);
+    opacity: 0;
+  }
+}
+
+.glow-brand {
+  box-shadow: 0 0 0 1px rgba(177, 108, 255, 0.35),
+    0 8px 40px -12px rgba(177, 108, 255, 0.55);
+}
