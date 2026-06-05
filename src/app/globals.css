@@ -190,6 +190,18 @@ body::after {
   animation: msg-in 0.16s var(--ease-out);
 }
 
+/* intro shockwave ring */
+@keyframes shock {
+  from {
+    opacity: 0.85;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3.4);
+  }
+}
+
 @keyframes pulse-dot {
   0%,
   100% {

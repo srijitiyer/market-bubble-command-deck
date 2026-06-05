@@ -214,7 +214,7 @@ export function Deck() {
             id="left"
             defaultSize="17%"
             minSize="13%"
-            maxSize="26%"
+            maxSize="24%"
             className="min-w-0"
           >
             {leftRail}
@@ -228,7 +228,7 @@ export function Deck() {
             id="right"
             defaultSize="30%"
             minSize="22%"
-            maxSize="42%"
+            maxSize="38%"
             className="min-w-0"
           >
             {rightRail}

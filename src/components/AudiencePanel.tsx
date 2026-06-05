@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink } from "lucide-react";
 import { useDeck } from "@/lib/store";
 import { PLATFORMS, type Platform } from "@/lib/types";
@@ -18,9 +19,17 @@ interface Viewer {
   lastTs: number;
 }
 
+interface Hover {
+  v: Viewer;
+  x: number; // anchor center x (viewport)
+  y: number; // anchor top y (viewport)
+}
+
 export function AudiencePanel() {
   const messages = useDeck((s) => s.messages);
-  const [hover, setHover] = useState<Viewer | null>(null);
+  const [hover, setHover] = useState<Hover | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const viewers = useMemo(() => {
     const map = new Map<string, Viewer>();
@@ -51,8 +60,13 @@ export function AudiencePanel() {
     return c;
   }, [viewers]);
 
+  const enter = (v: Viewer) => (e: MouseEvent<HTMLAnchorElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setHover({ v, x: r.left + r.width / 2, y: r.top });
+  };
+
   return (
-    <div className="relative flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
         <span className="eyebrow">Live audience</span>
         <span className="mono text-[11px] text-faint">
@@ -72,9 +86,9 @@ export function AudiencePanel() {
               href={profileUrl(v.platform, v.username)}
               target="_blank"
               rel="noreferrer"
-              onMouseEnter={() => setHover(v)}
-              onMouseLeave={() => setHover((h) => (h === v ? null : h))}
-              className="relative flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold transition-transform hover:z-10 hover:scale-110"
+              onMouseEnter={enter(v)}
+              onMouseLeave={() => setHover(null)}
+              className="relative flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold transition-transform duration-150 hover:z-10 hover:scale-110"
               style={{
                 background: "rgba(255,255,255,0.04)",
                 color: v.color,
@@ -100,48 +114,78 @@ export function AudiencePanel() {
         ))}
       </div>
 
-      {hover && (
-        <div className="pointer-events-none absolute left-0 right-0 top-full z-20 mt-2 rounded-xl border border-border-strong bg-overlay p-3 shadow-2xl">
-          <div className="flex items-center gap-2">
-            <span
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                color: hover.color,
-                boxShadow: `inset 0 0 0 1.5px ${PLATFORMS[hover.platform].muted}`,
-              }}
+      {mounted &&
+        hover &&
+        createPortal(<ViewerCard hover={hover} />, document.body)}
+    </div>
+  );
+}
+
+// A fixed-position card anchored just above the hovered avatar. Rendered in a
+// portal so it never gets clipped by the scrolling rail, and flips below the
+// avatar if there isn't room above.
+function ViewerCard({ hover }: { hover: Hover }) {
+  const { v } = hover;
+  const meta = PLATFORMS[v.platform];
+  const W = 232;
+  const below = hover.y < 168; // not enough room above → drop below
+  const left = Math.min(
+    Math.max(hover.x - W / 2, 10),
+    window.innerWidth - W - 10,
+  );
+  return (
+    <div
+      className="pointer-events-none fixed z-[100000]"
+      style={{
+        left,
+        top: below ? hover.y + 30 : hover.y - 12,
+        width: W,
+        transform: below ? "translateY(0)" : "translateY(-100%)",
+      }}
+    >
+      <div
+        className="animate-msg-in rounded-xl border border-border-strong bg-overlay p-3 shadow-2xl"
+        style={{ boxShadow: "0 16px 44px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05)" }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              color: v.color,
+              boxShadow: `inset 0 0 0 1.5px ${meta.muted}`,
+            }}
+          >
+            {v.displayName.slice(0, 1).toUpperCase()}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div
+              className="truncate text-[13px] font-semibold"
+              style={{ color: v.color }}
             >
-              {hover.displayName.slice(0, 1).toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div
-                className="truncate text-[13px] font-semibold"
-                style={{ color: hover.color }}
-              >
-                {hover.displayName}
-              </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-dim">
-                <PlatformIcon
-                  platform={hover.platform}
-                  className="h-3 w-3"
-                  style={{ color: PLATFORMS[hover.platform].accent }}
-                />
-                {PLATFORMS[hover.platform].name} · #{hover.channel}
-              </div>
+              {v.displayName}
             </div>
-            <div className="flex items-center gap-1 text-faint">
-              <span className="mono text-[11px]">{hover.count} msg</span>
-              <ExternalLink className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 text-[11px] text-dim">
+              <PlatformIcon
+                platform={v.platform}
+                className="h-3 w-3"
+                style={{ color: meta.accent }}
+              />
+              {meta.name} · #{v.channel}
             </div>
           </div>
-          <div className="mt-2 rounded-lg bg-black/30 px-2.5 py-1.5">
-            <div className="eyebrow mb-1">last · {formatClock(hover.lastTs)}</div>
-            <div className="line-clamp-2 text-[11px] text-[#cfd4dd]">
-              {hover.lastText}
-            </div>
+          <div className="flex items-center gap-1 text-faint">
+            <span className="mono text-[11px]">{v.count} msg</span>
+            <ExternalLink className="h-3 w-3" />
           </div>
         </div>
-      )}
+        <div className="mt-2 rounded-lg bg-black/30 px-2.5 py-1.5">
+          <div className="eyebrow mb-1">last · {formatClock(v.lastTs)}</div>
+          <div className="line-clamp-2 text-[11px] text-[#cfd4dd]">
+            {v.lastText}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
