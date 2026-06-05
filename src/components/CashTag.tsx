@@ -5,6 +5,7 @@ import {
   getPriceForSymbol,
   formatPrice,
   formatMcap,
+  coingeckoUrl,
   SYMBOL_TO_ID,
   type TokenPrice,
 } from "@/lib/prices";
@@ -34,9 +35,20 @@ export function CashTag({ symbol }: { symbol: string }) {
       onMouseEnter={onEnter}
       onMouseLeave={() => setOpen(false)}
     >
-      <span className="mono cursor-default rounded bg-[rgba(46,189,133,0.12)] px-1 text-[0.92em] font-semibold text-[#2ebd85] transition hover:bg-[rgba(46,189,133,0.2)]">
-        ${sym}
-      </span>
+      {known ? (
+        <a
+          href={coingeckoUrl(SYMBOL_TO_ID[sym])}
+          target="_blank"
+          rel="noreferrer"
+          className="mono rounded bg-[rgba(46,189,133,0.12)] px-1 text-[0.92em] font-semibold text-[#2ebd85] transition hover:bg-[rgba(46,189,133,0.22)]"
+        >
+          ${sym}
+        </a>
+      ) : (
+        <span className="mono cursor-default rounded bg-[rgba(46,189,133,0.1)] px-1 text-[0.92em] font-semibold text-[#2ebd85]/80">
+          ${sym}
+        </span>
+      )}
       {open && (
         <span className="absolute bottom-full left-1/2 z-30 mb-1.5 block w-44 -translate-x-1/2 rounded-lg border border-border-strong bg-overlay p-2.5 text-left shadow-2xl">
           <span className="flex items-center justify-between">

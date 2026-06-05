@@ -3,7 +3,7 @@ import { Crown, Gem, Megaphone, Pin, Shield, Star } from "lucide-react";
 import type { ChatMessage } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
 import { useDeck } from "@/lib/store";
-import { cn, formatClock } from "@/lib/utils";
+import { cn, formatClock, profileUrl } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 import { CashTag } from "./CashTag";
 
@@ -101,13 +101,16 @@ function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
       <div className="min-w-0 flex-1">
         <span className="mr-1.5 inline-flex items-center gap-1 align-baseline">
           <Badges msg={msg} />
-          <span
-            className="font-semibold"
+          <a
+            href={profileUrl(msg.platform, msg.username)}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold hover:underline"
             style={{ color: msg.color }}
             title={`@${msg.username} on ${meta.name}`}
           >
             {msg.displayName}
-          </span>
+          </a>
         </span>
         <span className="break-words text-[#d4d8e0]">{renderText(msg.text)}</span>
       </div>

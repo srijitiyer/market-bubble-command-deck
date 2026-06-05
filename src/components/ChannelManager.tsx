@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X as XClose } from "lucide-react";
+import { ExternalLink, Plus, X as XClose } from "lucide-react";
 import { useDeck, channelKey } from "@/lib/store";
 import { PLATFORMS, PLATFORM_LIST, type Platform } from "@/lib/types";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, formatNumber, profileUrl } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 import { ConnectionDot } from "./ConnectionDot";
 
@@ -32,9 +32,7 @@ export function ChannelManager() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-dim">
-          Sources
-        </h2>
+        <span className="eyebrow">Sources</span>
         <span className="mono text-[11px] text-faint">{channels.length}</span>
       </div>
 
@@ -159,16 +157,28 @@ export function ChannelManager() {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeChannel(c.platform, c.channel);
-                }}
-                className="rounded p-0.5 text-faint opacity-0 transition hover:bg-white/10 hover:text-neg group-hover:opacity-100"
-                title="Remove"
-              >
-                <XClose className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                <a
+                  href={profileUrl(c.platform, c.channel)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded p-0.5 text-faint transition hover:bg-white/10 hover:text-fg"
+                  title={`Open ${c.channel} on ${PLATFORMS[c.platform].name}`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeChannel(c.platform, c.channel);
+                  }}
+                  className="rounded p-0.5 text-faint transition hover:bg-white/10 hover:text-neg"
+                  title="Remove"
+                >
+                  <XClose className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           );
         })}
