@@ -225,6 +225,23 @@ body::after {
   animation: tick-down 0.45s var(--ease-out);
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
 @keyframes float-bubble {
   0% {
     transform: translateY(0) scale(0.6);

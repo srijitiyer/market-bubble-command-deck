@@ -114,6 +114,66 @@ export async function getPriceForSymbol(symbol: string): Promise<TokenPrice | nu
   return p;
 }
 
+export interface MarketRow {
+  id: string;
+  symbol: string;
+  usd: number;
+  change24h: number;
+  marketCap: number;
+  spark: number[];
+}
+
+let marketsCache: { rows: MarketRow[]; ts: number } | null = null;
+
+export async function getMarkets(symbols: string[]): Promise<MarketRow[]> {
+  if (marketsCache && Date.now() - marketsCache.ts < TTL) return marketsCache.rows;
+  const ids = symbols.map((s) => SYMBOL_TO_ID[s.toUpperCase()]).filter(Boolean);
+  const url =
+    `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(
+      ",",
+    )}&order=market_cap_desc&sparkline=true&price_change_percentage=24h`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(String(res.status));
+    const json = (await res.json()) as Array<{
+      id: string;
+      symbol: string;
+      current_price: number;
+      price_change_percentage_24h: number;
+      market_cap: number;
+      sparkline_in_7d?: { price: number[] };
+    }>;
+    // preserve the requested symbol order
+    const byId = new Map(json.map((r) => [r.id, r]));
+    const rows: MarketRow[] = [];
+    for (const sym of symbols.map((s) => s.toUpperCase())) {
+      const id = SYMBOL_TO_ID[sym];
+      const r = id && byId.get(id);
+      if (!r) continue;
+      const full = r.sparkline_in_7d?.price ?? [];
+      // downsample to ~28 points for a compact sparkline
+      const step = Math.max(1, Math.floor(full.length / 28));
+      const spark = full.filter((_, i) => i % step === 0);
+      rows.push({
+        id: r.id,
+        symbol: sym,
+        usd: r.current_price,
+        change24h: r.price_change_percentage_24h ?? 0,
+        marketCap: r.market_cap ?? 0,
+        spark,
+      });
+    }
+    marketsCache = { rows, ts: Date.now() };
+    return rows;
+  } catch {
+    return marketsCache?.rows ?? [];
+  }
+}
+
+export function coingeckoUrl(id: string): string {
+  return `https://www.coingecko.com/en/coins/${id}`;
+}
+
 export function formatPrice(n: number): string {
   if (n >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
   if (n >= 1) return n.toLocaleString("en-US", { maximumFractionDigits: 2 });

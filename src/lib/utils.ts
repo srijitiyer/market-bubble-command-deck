@@ -31,6 +31,16 @@ export function formatClock(ts: number): string {
   });
 }
 
+import type { Platform } from "./types";
+
+// Link to a user's profile / a channel page on its platform.
+export function profileUrl(platform: Platform, username: string): string {
+  const u = username.replace(/^[@#]/, "");
+  if (platform === "twitch") return `https://twitch.tv/${u}`;
+  if (platform === "kick") return `https://kick.com/${u}`;
+  return `https://x.com/${u}`;
+}
+
 // Deterministic color from a string (stable per-username fallback color)
 export function colorFromString(str: string): string {
   let hash = 0;
