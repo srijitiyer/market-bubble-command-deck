@@ -94,22 +94,22 @@ function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
   return (
     <div
       className={cn(
-        "group relative flex gap-2.5 px-3 py-1.5 text-[13px] leading-snug transition-colors hover:bg-white/[0.03]",
+        "group relative flex gap-2 py-1.5 pl-3 pr-2 text-[13px] leading-snug transition-colors duration-150 hover:bg-white/[0.025]",
         fresh && "animate-msg-in",
       )}
     >
       {/* platform accent rail */}
       <span
-        className="absolute left-0 top-0 h-full w-[2px] opacity-70"
+        className="absolute left-0 top-0 h-full w-[2px] opacity-60"
         style={{ background: meta.accent }}
       />
-      {/* source icon */}
+      {/* source badge — clear platform label for the merged feed */}
       <span
-        className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+        className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
         style={{
           background: meta.tint,
           color: meta.accent,
-          boxShadow: `inset 0 0 0 1px ${meta.accent}40`,
+          boxShadow: `inset 0 0 0 1px ${meta.accent}33`,
         }}
         title={`${meta.name} · #${msg.channel}`}
       >
@@ -117,7 +117,7 @@ function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
       </span>
 
       <div className="min-w-0 flex-1">
-        <span className="mr-1.5 inline-flex items-center gap-1 align-baseline">
+        <span className="mr-2 inline-flex items-center gap-1 align-baseline">
           <Badges msg={msg} />
           <a
             href={profileUrl(msg.platform, msg.username)}
@@ -130,17 +130,17 @@ function MessageRowBase({ msg, fresh }: { msg: ChatMessage; fresh?: boolean }) {
             {msg.displayName}
           </a>
         </span>
-        <span className="break-words text-[#d4d8e0]">{renderText(msg.text)}</span>
+        <span className="break-words text-[#cdd1d9]">{renderText(msg.text)}</span>
       </div>
 
-      <div className="flex shrink-0 items-start gap-1.5">
+      <div className="flex shrink-0 items-start gap-1">
         <button
           onClick={() => useDeck.getState().setFeatured(msg)}
-          className="mt-[1px] rounded p-0.5 text-faint opacity-0 transition hover:bg-white/10 hover:text-brand group-hover:opacity-100"
+          className="mt-px rounded p-0.5 text-faint opacity-0 transition-colors duration-150 hover:bg-white/10 hover:text-brand group-hover:opacity-100"
           title="Feature this message"
           aria-label="Feature this message"
         >
-          <Pin className="h-3 w-3" />
+          <Pin className="h-3.5 w-3.5" />
         </button>
         <span className="mono mt-[3px] text-[10px] text-faint opacity-0 transition-opacity group-hover:opacity-100">
           {formatClock(msg.timestamp)}
