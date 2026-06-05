@@ -161,8 +161,6 @@ export function CommandPalette() {
     if (open) requestAnimationFrame(() => inputRef.current?.focus());
   }, [open]);
 
-  useEffect(() => setActive(0), [query]);
-
   if (!open) return null;
 
   return (
@@ -180,7 +178,10 @@ export function CommandPalette() {
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActive(0);
+            }}
             placeholder="Type a command…"
             className="flex-1 bg-transparent text-sm text-fg placeholder:text-faint outline-none"
           />
