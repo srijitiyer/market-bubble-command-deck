@@ -38,8 +38,12 @@ export function LandingTitle() {
 
   useEffect(() => {
     (window as unknown as { __playIntro?: () => void }).__playIntro = play;
-    play();
-    return () => timers.current.forEach(clearTimeout);
+    const kickoff = setTimeout(play, 0); // defer so first setState isn't sync-in-effect
+    const startup = timers.current;
+    return () => {
+      clearTimeout(kickoff);
+      startup.forEach(clearTimeout);
+    };
   }, [play]);
 
   if (phase < 0) return null;

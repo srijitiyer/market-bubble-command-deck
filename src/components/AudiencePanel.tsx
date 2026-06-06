@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { ExternalLink } from "lucide-react";
 import { useDeck } from "@/lib/store";
@@ -28,8 +28,6 @@ interface Hover {
 export function AudiencePanel() {
   const messages = useDeck((s) => s.messages);
   const [hover, setHover] = useState<Hover | null>(null);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const viewers = useMemo(() => {
     const map = new Map<string, Viewer>();
@@ -114,8 +112,8 @@ export function AudiencePanel() {
         ))}
       </div>
 
-      {mounted &&
-        hover &&
+      {hover &&
+        typeof document !== "undefined" &&
         createPortal(<ViewerCard hover={hover} />, document.body)}
     </div>
   );

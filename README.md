@@ -24,7 +24,8 @@ $10,000 Vibe Code Challenge.
 - **Command-deck intelligence** — messages/min, live-feed count, total viewers,
   per-platform chat-mix bar, and a top-chatters leaderboard.
 - **Filters that matter** — per-platform toggles, full-text search, and quick
-  modes for `@mentions`, `$tickers`, and mods only.
+  modes for `@mentions`, `$tickers`, **hosts only** (follow just the broadcasters
+  across every platform), and mods.
 - **Pause-on-scroll** — scroll up to read; the feed freezes and shows a
   "jump to live" pill with the count of messages you missed.
 - **Demo mode** — synthetic-but-believable crypto-stream chatter across all three

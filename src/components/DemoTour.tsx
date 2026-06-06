@@ -150,10 +150,6 @@ export function DemoTour() {
       }
     };
 
-    const visible = (el: Element) => {
-      const r = el.getBoundingClientRect();
-      return r.top > 130 && r.bottom < window.innerHeight - 150 && r.width > 0;
-    };
     const fire = (el: Element | null | undefined, t: string[]) =>
       el && t.forEach((n) => el.dispatchEvent(new MouseEvent(n, { bubbles: true })));
     const hover = (el?: Element | null) =>
