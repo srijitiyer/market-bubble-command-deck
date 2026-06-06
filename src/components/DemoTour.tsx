@@ -23,12 +23,16 @@ export function DemoTour() {
       document.getElementById("__tcur")?.remove();
       const c = document.createElement("div");
       c.id = "__tcur";
+      const sx = window.innerWidth * 0.5;
+      const sy = window.innerHeight * 0.46;
       c.style.cssText =
         "position:fixed;left:0;top:0;width:26px;height:26px;z-index:100002;pointer-events:none;" +
-        `transition:transform ${CUR_MS}ms ${EASE},opacity .35s;transform:translate(50vw,46vh);` +
+        `transition:transform ${CUR_MS}ms ${EASE},opacity .35s;transform:translate(${sx}px,${sy}px);` +
         "filter:drop-shadow(0 0 6px rgba(176,139,242,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
       c.innerHTML =
         '<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M5 3 L5 20 L9.5 15.2 L12.8 22 L15.6 20.7 L12.3 14 L19 14 Z" fill="#fff" stroke="#0a0a0a" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+      c.dataset.x = String(sx);
+      c.dataset.y = String(sy);
       document.body.appendChild(c);
       return c;
     };
@@ -39,6 +43,7 @@ export function DemoTour() {
       cur.dataset.x = String(x);
       cur.dataset.y = String(y);
       cur.style.transform = `translate(${x}px,${y}px)`;
+      placeCaption(x, y);
       return sleep(CUR_MS + 40);
     };
     const ripple = () => {
@@ -89,37 +94,59 @@ export function DemoTour() {
       await move(r.left + r.width / 2 - 8, r.top + r.height / 2 - 5);
     };
 
-    // ---- caption card -----------------------------------------------------
+    // ---- caption card (pops up next to the cursor and travels with it) ----
+    const POP = "cubic-bezier(0.34, 1.56, 0.64, 1)"; // slight overshoot = "pop"
     let capEl: HTMLElement | null = null;
+    // Anchor the card just above-right of the cursor tip, flipping/clamping so
+    // it always stays fully on-screen near the action.
+    const placeCaption = (x: number, y: number) => {
+      if (!capEl) return;
+      const cw = capEl.offsetWidth || 280;
+      const ch = capEl.offsetHeight || 54;
+      let left = x + 22;
+      let top = y - ch - 16;
+      if (left + cw > window.innerWidth - 16) left = x - cw - 18;
+      if (left < 16) left = 16;
+      if (top < 88) top = y + 30;
+      capEl.style.left = `${left}px`;
+      capEl.style.top = `${top}px`;
+    };
     const showCaption = (kicker: string, text: string) => {
       if (!capEl) {
         capEl = document.createElement("div");
         capEl.id = "__tcap";
         capEl.style.cssText =
-          "position:fixed;left:50%;bottom:42px;transform:translate(-50%,16px);z-index:100003;" +
-          "display:flex;align-items:center;gap:12px;padding:12px 18px 12px 14px;border-radius:14px;" +
-          "background:linear-gradient(180deg,rgba(22,23,29,.96),rgba(14,15,20,.96));" +
-          "border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);" +
-          "opacity:0;transition:opacity .4s ease,transform .4s " + EASE + ";pointer-events:none;backdrop-filter:blur(10px)";
+          "position:fixed;left:0;top:0;z-index:100003;" +
+          "display:flex;align-items:center;gap:11px;padding:11px 17px 11px 13px;border-radius:13px;" +
+          "background:linear-gradient(180deg,rgba(24,25,32,.97),rgba(15,16,21,.97));" +
+          "border:1px solid rgba(176,139,242,.22);box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);" +
+          "opacity:0;transform:translateY(8px) scale(.94);pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;" +
+          `transition:left .8s ${EASE},top .8s ${EASE},opacity .3s ease,transform .42s ${POP}`;
         document.body.appendChild(capEl);
       }
       capEl.innerHTML =
-        '<span style="width:3px;height:30px;border-radius:3px;background:linear-gradient(180deg,#b08bf2,#8aa0ff)"></span>' +
+        '<span style="width:3px;height:32px;border-radius:3px;background:linear-gradient(180deg,#b08bf2,#8aa0ff);box-shadow:0 0 10px rgba(176,139,242,.6)"></span>' +
         '<span style="display:flex;flex-direction:column;gap:3px">' +
-        `<span style="font:600 9px/1 ui-sans-serif,system-ui;letter-spacing:.14em;text-transform:uppercase;color:#b08bf2">${kicker}</span>` +
-        `<span style="font:600 16px/1.1 ui-sans-serif,system-ui;letter-spacing:-.01em;color:#ecedf1;white-space:nowrap">${text}</span>` +
+        `<span style="font:700 9px/1 ui-sans-serif,system-ui;letter-spacing:.16em;text-transform:uppercase;color:#c4b6f5">${kicker}</span>` +
+        `<span style="font:600 16px/1.15 ui-sans-serif,system-ui;letter-spacing:-.01em;color:#f3f4f8">${text}</span>` +
         "</span>";
+      // place at the cursor without gliding (it's still invisible), then pop in
+      const prev = capEl.style.transition;
+      capEl.style.transition = "none";
+      placeCaption(cx(), cy());
+      void capEl.offsetWidth;
+      capEl.style.transition = prev;
       requestAnimationFrame(() => {
         if (capEl) {
           capEl.style.opacity = "1";
-          capEl.style.transform = "translate(-50%,0)";
+          capEl.style.transform = "translateY(0) scale(1)";
         }
       });
     };
     const hideCaption = () => {
       if (capEl) {
         capEl.style.opacity = "0";
-        capEl.style.transform = "translate(-50%,16px)";
+        capEl.style.transform = "translateY(8px) scale(.94)";
       }
     };
 
@@ -252,13 +279,18 @@ export function DemoTour() {
         const track = () => {
           if (!sep) return;
           const r = sep.getBoundingClientRect();
-          cur.style.transform = `translate(${r.left + r.width / 2 - 8}px,${r.top + r.height / 2 - 5}px)`;
+          const hx = r.left + r.width / 2 - 8;
+          const hy = r.top + r.height / 2 - 5;
+          cur.style.transform = `translate(${hx}px,${hy}px)`;
+          cur.dataset.x = String(hx);
+          cur.dataset.y = String(hy);
+          placeCaption(hx, hy);
         };
         const steps = 26;
         for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
           const t = i / steps;
-          setL({ left: 17, center: lerp(53, 37, t), right: lerp(30, 46, t) });
+          setL({ left: 17, center: lerp(53, 45, t), right: lerp(30, 38, t) });
           track();
           await sleep(34);
         }
@@ -266,7 +298,7 @@ export function DemoTour() {
         for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
           const t = i / steps;
-          setL({ left: 17, center: lerp(37, 53, t), right: lerp(46, 30, t) });
+          setL({ left: 17, center: lerp(45, 53, t), right: lerp(38, 30, t) });
           track();
           await sleep(34);
         }
