@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PLATFORMS, type StreamChannel } from "@/lib/types";
+import { HOSTS, PLATFORMS, SHOW, type StreamChannel } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 
-// A branded "live" stage shown in demo mode in place of a real embed, so the
-// deck looks intentional and alive during a pitch instead of surfacing an
-// offline third-party player.
+// A branded "on air" stage shown in demo mode in place of a real embed. Styled
+// as the Market Bubble show broadcasting with its two hosts, so the deployed
+// deck reads as an intentional broadcast (not an offline third-party player).
+// Swap demo OFF and add a live channel to embed the real Twitch/Kick stream.
 export function DemoStage({ stream }: { stream: StreamChannel }) {
   const meta = PLATFORMS[stream.platform];
-  const [viewers, setViewers] = useState(1280);
+  const [viewers, setViewers] = useState(29540);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => {
-      setViewers((v) => Math.max(800, v + Math.round((Math.random() - 0.45) * 60)));
+      setViewers((v) => Math.max(800, v + Math.round((Math.random() - 0.42) * 140)));
       setElapsed((e) => e + 1);
     }, 1000);
     return () => clearInterval(id);
@@ -24,104 +25,89 @@ export function DemoStage({ stream }: { stream: StreamChannel }) {
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
 
-  // Static bubble field (deterministic so SSR/CSR match).
-  const bubbles = Array.from({ length: 14 }, (_, i) => ({
-    left: (i * 37) % 100,
-    size: 6 + ((i * 13) % 26),
-    delay: (i % 7) * 0.6,
-    dur: 6 + (i % 5),
-  }));
-
   return (
     <div
-      className="relative h-full w-full overflow-hidden"
+      className="relative flex h-full w-full items-center justify-center overflow-hidden"
       style={{
         background:
-          "radial-gradient(120% 90% at 50% 0%, rgba(177,108,255,0.16), transparent 62%), linear-gradient(160deg,#0b0d14,#06070b)",
+          "radial-gradient(120% 90% at 50% -10%, rgba(177,108,255,0.18), transparent 60%), linear-gradient(160deg,#0c0e16,#06070b)",
       }}
     >
-      {/* fine dot-grid — reads as a screen */}
+      {/* faint studio grid */}
       <div
-        className="absolute inset-0 opacity-[0.5]"
+        className="absolute inset-0 opacity-50"
         style={{
           backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "16px 16px",
+            "radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)",
+          backgroundSize: "18px 18px",
           maskImage:
-            "radial-gradient(120% 100% at 50% 40%, #000 30%, transparent 80%)",
+            "radial-gradient(120% 100% at 50% 40%, #000 30%, transparent 82%)",
         }}
       />
 
-      {/* floating bubbles */}
-      <div className="absolute inset-0">
-        {bubbles.map((b, i) => (
-          <span
-            key={i}
-            className="absolute bottom-0 rounded-full"
-            style={{
-              left: `${b.left}%`,
-              width: b.size,
-              height: b.size,
-              background:
-                "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.6), rgba(177,108,255,0.22) 60%, transparent)",
-              animation: `float-bubble ${b.dur}s ease-in ${b.delay}s infinite`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* center brand with pulsing halo */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-        <div className="relative flex h-14 w-14 items-center justify-center">
-          <span
-            className="absolute h-[72px] w-[72px] rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(177,108,255,0.35), transparent 70%)",
-              animation: "halo 3s ease-in-out infinite",
-            }}
-          />
-          <span
-            className="relative h-14 w-14 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle at 36% 30%, #f0d9ff, #c98bff 32%, #8a3df0 68%, #4a1d8f)",
-              boxShadow: "0 0 36px rgba(177,108,255,0.45)",
-            }}
-          />
-        </div>
-        <div className="text-[13px] font-semibold text-fg">
-          {stream.channel}
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-dim">
-          <PlatformIcon
-            platform={stream.platform}
-            className="h-3.5 w-3.5"
-            style={{ color: meta.accent }}
-          />
-          streaming on {meta.name}
-          {/* live audio equalizer */}
-          <span className="ml-1 flex items-end gap-[2px]">
-            {[0, 1, 2, 3].map((i) => (
-              <span
-                key={i}
-                className="w-[2px] origin-bottom rounded-full"
+      {/* the two hosts, broadcast two-shot */}
+      <div className="relative flex flex-col items-center gap-5 px-6">
+        <div className="flex items-center gap-5 sm:gap-9">
+          {HOSTS.map((h) => (
+            <div key={h.id} className="flex flex-col items-center gap-2">
+              <div
+                className="relative flex h-16 w-16 items-center justify-center rounded-full text-[20px] font-bold sm:h-20 sm:w-20 sm:text-[24px]"
                 style={{
-                  height: 9,
-                  background: meta.accent,
-                  animation: `eq 0.9s ease-in-out ${i * 0.15}s infinite`,
+                  color: h.accent,
+                  background:
+                    "radial-gradient(circle at 38% 30%, rgba(255,255,255,0.10), rgba(255,255,255,0.02))",
+                  boxShadow: `inset 0 0 0 1.5px ${h.accent}66, 0 0 30px ${h.accent}33`,
                 }}
-              />
-            ))}
-          </span>
+              >
+                {h.name[0]}
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full"
+                  style={{ background: "#0a0c12", boxShadow: `inset 0 0 0 1px ${h.accent}55` }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full live-dot" style={{ background: h.accent }} />
+                </span>
+              </div>
+              <div className="text-center">
+                <div className="text-[13px] font-semibold text-fg">{h.name}</div>
+                <div className="text-[10px] text-faint">{h.role}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="text-[15px] font-semibold tracking-tight text-fg">
+            {SHOW.name}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-dim">
+            <PlatformIcon
+              platform={stream.platform}
+              className="h-3.5 w-3.5"
+              style={{ color: meta.accent }}
+            />
+            on {meta.name}
+            <span className="ml-1 flex items-end gap-[2px]">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span
+                  key={i}
+                  className="w-[2px] origin-bottom rounded-full"
+                  style={{
+                    height: 10,
+                    background: meta.accent,
+                    animation: `eq 0.9s ease-in-out ${i * 0.13}s infinite`,
+                  }}
+                />
+              ))}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* live pill */}
+      {/* on-air pill */}
       <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/55 px-2 py-1 backdrop-blur">
         <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
-          Live
+          On Air
         </span>
         <span className="rounded bg-white/10 px-1 text-[9px] font-medium uppercase tracking-wider text-dim">
           Demo

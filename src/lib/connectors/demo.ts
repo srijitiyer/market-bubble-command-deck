@@ -22,17 +22,19 @@ const TICKERS = ["BUBBLE", "SOL", "BTC", "ETH", "PUMP", "WIF", "BONK", "DEGEN", 
 
 const MESSAGES = [
   "this is actually so bullish",
-  "send it",
+  "ansem what's the trade here",
+  "banks has the distribution fr",
   "wen moon",
   "$BUBBLE looking primed ngl",
-  "who's still holding from the launch",
-  "LFG 🚀",
-  "chat is this real",
-  "down bad rn",
+  "polymarket odds on this take?",
+  "need live odds for every call they make",
+  "command attention is the whole product",
+  "make money command attention leverage ai",
+  "this is market sentiment in one screen",
   "buy the dip",
   "this stream is elite",
   "the UI on this dashboard is insane",
-  "first time catching the stream live LETS GO",
+  "first time catching the show live LETS GO",
   "gm degens",
   "+EV for many reasons",
   "treyce cooking again",
@@ -40,7 +42,7 @@ const MESSAGES = [
   "twitch gang where you at",
   "X crew assemble",
   "we are so back",
-  "it's over",
+  "ansem said one sentence and sol moved",
   "no it's not over we're so back",
   "hover over the viewers that feature is clean",
   "unified chat is genius why did nobody do this sooner",
@@ -51,7 +53,7 @@ const MESSAGES = [
   "audio cutting for anyone else?",
   "nah audio fine on kick",
   "chat moving too fast lol",
-  "100x or nothing",
+  "every clip from this setup looks expensive",
   "watching from 3 platforms at once now haha",
   "the source labels are so useful",
   "who built this? hire them",
@@ -59,16 +61,29 @@ const MESSAGES = [
   "🫧🫧🫧",
   "ratio",
   "based",
-  "ser this is a wendys",
+  "btc tags highs and this chat explodes",
   "i'm all in",
-  "paper hands ngmi",
+  "thursdays 1pm is appointment viewing now",
   "real ones know",
-  "vibe code challenge winner right here",
+  "leverage ai or get left behind",
   "ROI on this is crazy",
   "GG",
   "sheeeesh",
   "bullish on the team",
   "love the live viewer map",
+];
+
+// Host takes — Ansem and Banks dropping calls into the merged room. Surfaced by
+// the Stage host switch and the Hosts filter.
+const HOST_TAKES: { host: "ansem" | "banks"; name: string; text: string }[] = [
+  { host: "ansem", name: "Ansem", text: "if BTC reclaims the range high I'm adding to SOL, simple as" },
+  { host: "ansem", name: "Ansem", text: "the trade is patience here, don't force it" },
+  { host: "ansem", name: "Ansem", text: "$BUBBLE flows are quietly stacking, watch the bid" },
+  { host: "ansem", name: "Ansem", text: "alts don't move until BTC stops, you know the drill" },
+  { host: "banks", name: "Banks", text: "distribution is the edge — we put eyes on the trade, that's the moat" },
+  { host: "banks", name: "Banks", text: "clip that and post it everywhere, this is the thesis" },
+  { host: "banks", name: "Banks", text: "command attention first, the money follows" },
+  { host: "banks", name: "Banks", text: "every Thursday we turn one chat into the whole market" },
 ];
 
 // Real global emote names (7TV / BTTV / Twitch first-party) so they render as
@@ -103,6 +118,30 @@ function pick<T>(arr: T[]): T {
 }
 
 export function makeDemoMessage(platform: Platform, channel: string): ChatMessage {
+  // ~6% of the time a host (Ansem / Banks) drops a take into the room.
+  if (Math.random() < 0.06) {
+    const take = pick(HOST_TAKES);
+    const { mentions, tickers } = extractEntities(take.text);
+    return {
+      id: uid(platform),
+      platform,
+      channel,
+      username: take.name.toLowerCase(),
+      displayName: take.name,
+      color: take.host === "ansem" ? "#5ad1c4" : "#e0a574",
+      text: take.text,
+      badges: [{ type: "broadcaster" }],
+      timestamp: Date.now(),
+      isMod: false,
+      isSub: false,
+      isVip: false,
+      isBroadcaster: true,
+      host: take.host,
+      mentions,
+      tickers,
+    };
+  }
+
   const username = pick(USERNAMES) + (Math.random() < 0.3 ? Math.floor(Math.random() * 99) : "");
   let text = pick(MESSAGES);
 

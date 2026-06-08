@@ -47,6 +47,8 @@ interface DeckState {
   activeStream: string | null; // key of channel being watched large
   featured: ChatMessage | null; // message pinned to the featured/overlay slot
   emotesReady: boolean; // flips true once global emote sets load
+  viewMode: "stage" | "deck"; // hero broadcast stage vs power-user deck
+  hostFilter: "all" | string; // stage host switch (e.g. "ansem" | "banks")
 
   // actions
   addChannel: (
@@ -68,6 +70,8 @@ interface DeckState {
   toggleDemo: () => void;
   toggleSound: () => void;
   setActiveStream: (key: string | null) => void;
+  setViewMode: (m: "stage" | "deck") => void;
+  setHostFilter: (h: "all" | string) => void;
   refreshMeta: () => void;
   broadcast: (text: string) => void;
   hydrate: (channels: PersistedChannel[], demoMode: boolean, soundOn: boolean) => void;
@@ -197,6 +201,8 @@ export const useDeck = create<DeckState>((set, get) => ({
   activeStream: null,
   featured: null,
   emotesReady: false,
+  viewMode: "stage",
+  hostFilter: "all",
 
   addChannel: (platform, channel, opts) => {
     const clean = channel.toLowerCase().replace(/^[#@]/, "").trim();
@@ -391,6 +397,8 @@ export const useDeck = create<DeckState>((set, get) => ({
   },
 
   setActiveStream: (key) => set({ activeStream: key }),
+  setViewMode: (m) => set({ viewMode: m, hostFilter: "all" }),
+  setHostFilter: (h) => set({ hostFilter: h }),
 
   setFeatured: (msg) => set({ featured: msg }),
 
@@ -448,10 +456,18 @@ export function getRatePerMin(state: DeckState): number {
 }
 
 export function filterMessages(state: DeckState): ChatMessage[] {
-  const { filters } = state;
+  const { filters, hostFilter } = state;
   const q = filters.search.trim().toLowerCase();
   return state.messages.filter((m) => {
     if (m.isHost) return q ? m.text.toLowerCase().includes(q) : true;
+    // Stage host switch: narrow to a host's takes + chat talking about them.
+    if (hostFilter !== "all") {
+      const onHost =
+        m.host === hostFilter ||
+        m.text.toLowerCase().includes(hostFilter) ||
+        m.mentions?.some((x) => x.toLowerCase().includes(hostFilter));
+      if (!onHost) return false;
+    }
     if (!filters.platforms[m.platform]) return false;
     if (filters.mode === "mentions" && !(m.mentions && m.mentions.length))
       return false;

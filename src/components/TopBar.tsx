@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Volume2, VolumeX } from "lucide-react";
+import { LayoutGrid, MonitorPlay, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { useDeck, getRatePerMin } from "@/lib/store";
 import { cn, formatNumber } from "@/lib/utils";
 import { BubbleMark } from "./icons";
@@ -23,6 +23,8 @@ export function TopBar() {
   const soundOn = useDeck((s) => s.soundOn);
   const toggleSound = useDeck((s) => s.toggleSound);
   const connections = useDeck((s) => s.connections);
+  const viewMode = useDeck((s) => s.viewMode);
+  const setViewMode = useDeck((s) => s.setViewMode);
   const rate = useDeck(getRatePerMin);
   const totalViewers = useDeck((s) =>
     s.channels.reduce((sum, c) => sum + (c.viewers ?? 0), 0),
@@ -68,6 +70,35 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {/* Stage / Deck view switch */}
+        <div className="flex items-center gap-0.5 rounded-md bg-bg-soft p-0.5 ring-1 ring-border">
+          <button
+            onClick={() => setViewMode("stage")}
+            className={cn(
+              "flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[11px] font-medium transition-colors duration-150",
+              viewMode === "stage"
+                ? "bg-white/[0.08] text-fg"
+                : "text-faint hover:text-dim",
+            )}
+            title="Broadcast stage"
+          >
+            <MonitorPlay className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Stage</span>
+          </button>
+          <button
+            onClick={() => setViewMode("deck")}
+            className={cn(
+              "flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[11px] font-medium transition-colors duration-150",
+              viewMode === "deck"
+                ? "bg-white/[0.08] text-fg"
+                : "text-faint hover:text-dim",
+            )}
+            title="Power-user deck"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Deck</span>
+          </button>
+        </div>
         <button
           onClick={() =>
             window.dispatchEvent(

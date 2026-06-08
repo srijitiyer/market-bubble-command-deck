@@ -22,6 +22,7 @@ import { SentimentMeter } from "./SentimentMeter";
 import { SharedComposer } from "./SharedComposer";
 import { LandingTitle } from "./LandingTitle";
 import { LandingOutro } from "./LandingOutro";
+import { StageView } from "./StageView";
 import { FeaturedBar } from "./FeaturedBar";
 import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
@@ -56,6 +57,7 @@ export function Deck() {
   const refreshMeta = useDeck((s) => s.refreshMeta);
   const setEmotesReady = useDeck((s) => s.setEmotesReady);
   const demoMode = useDeck((s) => s.demoMode);
+  const viewMode = useDeck((s) => s.viewMode);
   const seeded = useRef(false);
   const isDesktop = useIsDesktop();
   const groupRef = useRef<GroupImperativeHandle | null>(null);
@@ -199,7 +201,9 @@ export function Deck() {
         <TickerRail />
       </div>
 
-      {isDesktop ? (
+      {viewMode === "stage" ? (
+        <StageView />
+      ) : isDesktop ? (
         <Group
           orientation="horizontal"
           groupRef={groupRef}
