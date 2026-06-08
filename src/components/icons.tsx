@@ -42,10 +42,10 @@ export function BubbleMark(props: SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 48 48" aria-hidden {...props}>
       <defs>
         <radialGradient id="mb-orb" cx="38%" cy="32%" r="72%">
-          <stop offset="0%" stopColor="#f0d9ff" />
-          <stop offset="32%" stopColor="#c98bff" />
-          <stop offset="68%" stopColor="#8a3df0" />
-          <stop offset="100%" stopColor="#4a1d8f" />
+          <stop offset="0%" stopColor="#fefdfb" />
+          <stop offset="34%" stopColor="#ece3d0" />
+          <stop offset="70%" stopColor="#bcab86" />
+          <stop offset="100%" stopColor="#6f6450" />
         </radialGradient>
         <radialGradient id="mb-hi" cx="34%" cy="28%" r="30%">
           <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />

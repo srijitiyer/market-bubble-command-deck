@@ -37,18 +37,18 @@ export function TopBar() {
   return (
     <header className="relative z-10 flex h-14 shrink-0 items-center gap-4 border-b border-border px-4">
       <div className="flex items-center gap-3">
-        <BubbleMark className="h-8 w-8 drop-shadow-[0_2px_10px_rgba(184,139,255,0.5)]" />
+        <BubbleMark className="h-8 w-8 drop-shadow-[0_2px_10px_rgba(233,225,209,0.5)]" />
         <div className="leading-none">
           <div className="flex items-center gap-2">
-            <span className="text-[15px] font-semibold tracking-tight">
+            <span className="font-serif text-[20px] font-semibold leading-none tracking-tight text-fg">
               Market Bubble
             </span>
             <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-dim">
               Command Deck
             </span>
           </div>
-          <span className="mt-1 block text-[11px] text-faint">
-            Every stream · One chat
+          <span className="mt-1.5 block font-serif text-[11px] italic text-faint">
+            Presented by Polymarket
           </span>
         </div>
       </div>
@@ -128,7 +128,7 @@ export function TopBar() {
           className={cn(
             "flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors duration-150",
             demoMode
-              ? "bg-brand text-[#1a0e2e] shadow-lg shadow-brand/20"
+              ? "bg-brand text-[#181410] shadow-lg shadow-brand/20"
               : "text-dim ring-1 ring-border hover:text-fg hover:ring-border-strong",
           )}
           title="Toggle synthetic demo traffic across all sources"

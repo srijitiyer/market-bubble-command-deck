@@ -20,9 +20,9 @@ export function FeaturedBar() {
       <div
         className="relative flex items-start gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5"
         style={{
-          borderColor: "rgba(184,139,255,0.3)",
+          borderColor: "rgba(233,225,209,0.3)",
           background:
-            "linear-gradient(100deg, rgba(184,139,255,0.1), rgba(138,160,255,0.05))",
+            "linear-gradient(100deg, rgba(233,225,209,0.1), rgba(138,160,255,0.05))",
         }}
       >
         <div className="flex items-center gap-1.5 pt-0.5">

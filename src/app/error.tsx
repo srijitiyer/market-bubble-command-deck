@@ -13,8 +13,8 @@ export default function Error({
         className="h-12 w-12 rounded-full"
         style={{
           background:
-            "radial-gradient(circle at 36% 30%, #f0d9ff, #c98bff 32%, #8a3df0 68%, #4a1d8f)",
-          boxShadow: "0 0 40px rgba(177,108,255,0.5)",
+            "radial-gradient(circle at 36% 30%, #fefdfb, #ece3d0 32%, #bcab86 68%, #6f6450)",
+          boxShadow: "0 0 40px rgba(233,225,209,0.5)",
         }}
       />
       <div>

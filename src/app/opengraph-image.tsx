@@ -17,69 +17,78 @@ export default function OpengraphImage() {
           justifyContent: "space-between",
           padding: 72,
           background:
-            "radial-gradient(1100px 700px at 12% -10%, #2a1147, #06070b 60%), radial-gradient(900px 600px at 100% 0%, #131a3a, transparent 55%)",
-          color: "#eef1f6",
-          fontFamily: "sans-serif",
+            "radial-gradient(1100px 700px at 14% -12%, #1c1a16, #070707 62%)",
+          color: "#edeae3",
+          fontFamily: "Georgia, 'Times New Roman', serif",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <div
             style={{
-              width: 88,
-              height: 88,
+              width: 80,
+              height: 80,
               borderRadius: 999,
               background:
-                "radial-gradient(circle at 36% 30%, #f0d9ff, #c98bff 32%, #8a3df0 68%, #4a1d8f)",
-              boxShadow: "0 0 60px rgba(177,108,255,0.6)",
+                "radial-gradient(circle at 36% 30%, #fefdfb, #ece3d0 34%, #bcab86 70%, #6f6450)",
+              boxShadow: "0 0 60px rgba(233,225,209,0.45)",
             }}
           />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 30, color: "#99a0ad", letterSpacing: 2 }}>
-              MARKET BUBBLE
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ fontSize: 52, fontWeight: 700, letterSpacing: -1 }}>
+              Market Bubble
             </div>
-            <div style={{ fontSize: 40, fontWeight: 700 }}>Command Deck</div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ fontSize: 74, fontWeight: 800, lineHeight: 1.05 }}>
-            One live feed for
-          </div>
-          <div style={{ display: "flex", gap: 18 }}>
-            <span
+            <div
               style={{
-                fontSize: 74,
-                fontWeight: 800,
-                color: "#a970ff",
+                fontSize: 22,
+                fontStyle: "italic",
+                color: "#cabba0",
               }}
             >
-              Twitch
-            </span>
-            <span style={{ fontSize: 74, fontWeight: 800, color: "#5b616e" }}>
-              ·
-            </span>
-            <span style={{ fontSize: 74, fontWeight: 800, color: "#53fc18" }}>
-              Kick
-            </span>
-            <span style={{ fontSize: 74, fontWeight: 800, color: "#5b616e" }}>
-              ·
-            </span>
-            <span style={{ fontSize: 74, fontWeight: 800, color: "#e7e9ea" }}>
-              X
-            </span>
+              Presented by Polymarket
+            </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div style={{ fontSize: 28, color: "#99a0ad" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.05 }}>
+            One live feed for
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 18,
+              fontFamily: "system-ui, sans-serif",
+            }}
+          >
+            <span style={{ fontSize: 64, fontWeight: 700, color: "#9a7fd0" }}>
+              Twitch
+            </span>
+            <span style={{ fontSize: 64, fontWeight: 700, color: "#5b5852" }}>·</span>
+            <span style={{ fontSize: 64, fontWeight: 700, color: "#74bf6a" }}>
+              Kick
+            </span>
+            <span style={{ fontSize: 64, fontWeight: 700, color: "#5b5852" }}>·</span>
+            <span style={{ fontSize: 64, fontWeight: 700, color: "#e7e9ea" }}>X</span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            fontFamily: "system-ui, sans-serif",
+          }}
+        >
+          <div style={{ fontSize: 26, color: "#a7a49e" }}>
             Merge every chat. Watch every stream. Source-labeled, real-time.
           </div>
           <div
             style={{
               display: "flex",
-              fontSize: 24,
-              color: "#b16cff",
-              border: "1px solid rgba(177,108,255,0.4)",
+              fontSize: 22,
+              color: "#cabba0",
+              border: "1px solid rgba(233,225,209,0.35)",
               borderRadius: 999,
               padding: "10px 22px",
             }}

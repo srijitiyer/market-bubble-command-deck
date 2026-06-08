@@ -28,7 +28,7 @@ export function DemoTour() {
       c.style.cssText =
         "position:fixed;left:0;top:0;width:26px;height:26px;z-index:100002;pointer-events:none;" +
         `transition:transform ${CUR_MS}ms ${EASE},opacity .35s;transform:translate(${sx}px,${sy}px);` +
-        "filter:drop-shadow(0 0 6px rgba(176,139,242,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
+        "filter:drop-shadow(0 0 6px rgba(233,225,209,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
       c.innerHTML =
         '<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M5 3 L5 20 L9.5 15.2 L12.8 22 L15.6 20.7 L12.3 14 L19 14 Z" fill="#fff" stroke="#0a0a0a" stroke-width="1.4" stroke-linejoin="round"/></svg>';
       c.dataset.x = String(sx);
@@ -50,7 +50,7 @@ export function DemoTour() {
       const r = document.createElement("div");
       r.style.cssText =
         `position:fixed;left:${cx()}px;top:${cy()}px;width:14px;height:14px;z-index:100001;` +
-        "border-radius:999px;border:2px solid rgba(176,139,242,.9);pointer-events:none;" +
+        "border-radius:999px;border:2px solid rgba(233,225,209,.9);pointer-events:none;" +
         "transform:translate(-2px,-2px) scale(1);opacity:.9;transition:transform .5s ease-out,opacity .5s ease-out";
       document.body.appendChild(r);
       requestAnimationFrame(() => {
@@ -119,13 +119,13 @@ export function DemoTour() {
           "position:fixed;left:0;top:0;z-index:100003;" +
           "display:flex;align-items:center;gap:11px;padding:11px 17px 11px 13px;border-radius:13px;" +
           "background:linear-gradient(180deg,rgba(24,25,32,.97),rgba(15,16,21,.97));" +
-          "border:1px solid rgba(176,139,242,.22);box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);" +
+          "border:1px solid rgba(233,225,209,.22);box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);" +
           "opacity:0;transform:translateY(8px) scale(.94);pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;" +
           `transition:left .8s ${EASE},top .8s ${EASE},opacity .3s ease,transform .42s ${POP}`;
         document.body.appendChild(capEl);
       }
       capEl.innerHTML =
-        '<span style="width:3px;height:32px;border-radius:3px;background:linear-gradient(180deg,#b08bf2,#8aa0ff);box-shadow:0 0 10px rgba(176,139,242,.6)"></span>' +
+        '<span style="width:3px;height:32px;border-radius:3px;background:linear-gradient(180deg,#e9e1d1,#c9a86a);box-shadow:0 0 10px rgba(233,225,209,.6)"></span>' +
         '<span style="display:flex;flex-direction:column;gap:3px">' +
         `<span style="font:700 9px/1 ui-sans-serif,system-ui;letter-spacing:.16em;text-transform:uppercase;color:#c4b6f5">${kicker}</span>` +
         `<span style="font:600 16px/1.15 ui-sans-serif,system-ui;letter-spacing:-.01em;color:#f3f4f8">${text}</span>` +

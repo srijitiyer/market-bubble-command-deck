@@ -46,7 +46,7 @@ export function SharedComposer() {
       <button
         type="submit"
         disabled={!text.trim()}
-        className="flex items-center gap-1.5 rounded-lg bg-brand px-2.5 py-1.5 text-[11px] font-semibold text-[#1a0e2e] transition enabled:hover:brightness-110 disabled:opacity-40"
+        className="flex items-center gap-1.5 rounded-lg bg-brand px-2.5 py-1.5 text-[11px] font-semibold text-[#181410] transition enabled:hover:brightness-110 disabled:opacity-40"
         title="Posts to the unified shared room. Native cross-posting per platform needs OAuth."
       >
         <Send className="h-3 w-3" />

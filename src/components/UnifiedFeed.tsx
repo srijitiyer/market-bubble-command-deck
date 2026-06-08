@@ -125,7 +125,7 @@ export function UnifiedFeed() {
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
           <button
             onClick={resume}
-            className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand px-3.5 py-1.5 text-xs font-semibold text-white shadow-lg shadow-brand/30 transition hover:brightness-110"
+            className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand px-3.5 py-1.5 text-xs font-semibold text-[#181410] shadow-lg shadow-brand/30 transition hover:brightness-110"
           >
             <Pause className="h-3 w-3" />
             Paused

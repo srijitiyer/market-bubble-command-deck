@@ -8,27 +8,27 @@
 ---------------------------------------------------------------------------- */
 
 @theme inline {
-  /* canvas + elevation (lightness steps, cool-tinted) */
-  --color-bg: #08090c;
-  --color-bg-soft: #0c0d11;
-  --color-panel: #121318;
-  --color-panel-strong: #16171d;
-  --color-raised: #1b1c23;
-  --color-overlay: #1f2027;
+  /* canvas + elevation — Market Bubble's neutral near-black ladder */
+  --color-bg: #070707;
+  --color-bg-soft: #0c0c0c;
+  --color-panel: #151515;
+  --color-panel-strong: #1a1a1a;
+  --color-raised: #202020;
+  --color-overlay: #262626;
 
   /* white-alpha hairlines compose over any surface */
   --color-border: rgba(255, 255, 255, 0.07);
   --color-border-strong: rgba(255, 255, 255, 0.13);
   --color-border-subtle: rgba(255, 255, 255, 0.045);
 
-  /* text — off-white, never pure #fff */
-  --color-fg: #ecedf1;
-  --color-fg-dim: #abaeb9;
-  --color-fg-faint: #6b6e7a;
+  /* text — warm off-white, never pure #fff */
+  --color-fg: #edeae3;
+  --color-fg-dim: #a7a49e;
+  --color-fg-faint: #6f6c66;
 
-  /* one rationed accent (brand violet) */
-  --color-brand: #b08bf2;
-  --color-brand-2: #8aa0ff;
+  /* rationed accent — warm cream + antique gold (editorial finance, not violet) */
+  --color-brand: #e9e1d1;
+  --color-brand-2: #c9a86a;
 
   /* platform — FULL neon only for tiny (<=16px) glyphs/pips */
   --color-twitch: #a970ff;
@@ -46,6 +46,7 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-serif);
 
   --radius-xl2: 0.75rem;
 

@@ -36,7 +36,7 @@ export function ResizeHandle() {
           "h-full w-px transition-colors duration-150",
           dragging
             ? "bg-brand"
-            : "bg-border group-hover:bg-[rgba(176,139,242,0.55)]",
+            : "bg-border group-hover:bg-[rgba(233,225,209,0.55)]",
         )}
       />
       {/* grip */}
@@ -48,7 +48,7 @@ export function ResizeHandle() {
             : "scale-90 bg-[rgba(255,255,255,0.3)] opacity-0 group-hover:scale-100 group-hover:opacity-100",
         )}
         style={
-          dragging ? { boxShadow: "0 0 12px rgba(176,139,242,0.7)" } : undefined
+          dragging ? { boxShadow: "0 0 12px rgba(233,225,209,0.7)" } : undefined
         }
       />
     </Separator>

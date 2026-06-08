@@ -71,7 +71,7 @@ export function LandingTitle() {
         className="absolute left-1/2 top-[46%] h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(176,139,242,0.22), rgba(138,160,255,0.10) 42%, transparent 68%)",
+            "radial-gradient(circle, rgba(233,225,209,0.22), rgba(138,160,255,0.10) 42%, transparent 68%)",
           opacity: phase === 0 ? 0 : bloom ? 1 : 0.5,
           transform: `translate(-50%,-50%) scale(${bloom ? 1.15 : 0.85})`,
           transition: `opacity .9s ease, transform 1.1s ${EASE_OUT}`,
@@ -90,7 +90,7 @@ export function LandingTitle() {
               width: 168,
               height: 168,
               background:
-                "radial-gradient(circle, rgba(176,139,242,0.55), transparent 62%)",
+                "radial-gradient(circle, rgba(233,225,209,0.55), transparent 62%)",
               opacity: bloom ? 1 : 0,
               transform: bloom ? "scale(1.1)" : "scale(0.3)",
               transition: `opacity .55s ease, transform .8s ${EASE_OUT}`,
@@ -132,7 +132,7 @@ export function LandingTitle() {
           <BubbleMark
             className="relative h-[88px] w-[88px]"
             style={{
-              filter: "drop-shadow(0 6px 28px rgba(176,139,242,0.6))",
+              filter: "drop-shadow(0 6px 28px rgba(233,225,209,0.6))",
               transform: merged
                 ? phase >= 3
                   ? "scale(1)"
@@ -154,13 +154,13 @@ export function LandingTitle() {
           }}
         >
           <div
-            className="text-[40px] font-semibold leading-none tracking-tight text-white"
-            style={{ textShadow: "0 2px 24px rgba(176,139,242,0.45)" }}
+            className="font-serif text-[46px] font-semibold leading-none tracking-tight text-white"
+            style={{ textShadow: "0 2px 28px rgba(233,225,209,0.4)" }}
           >
             Market Bubble
           </div>
-          <div className="mt-3.5 text-[13px] font-semibold uppercase tracking-[0.34em] text-[#cabff2]">
-            Every stream · One chat
+          <div className="mt-4 text-[12px] font-medium uppercase tracking-[0.32em] text-[#cabba0]">
+            Presented by Polymarket
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@ function ShockRing() {
       style={{
         width: 60,
         height: 60,
-        border: "1.5px solid rgba(176,139,242,0.85)",
+        border: "1.5px solid rgba(233,225,209,0.85)",
         animation: "shock 0.9s cubic-bezier(0.16,1,0.3,1) forwards",
       }}
     />

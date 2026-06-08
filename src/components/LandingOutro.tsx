@@ -66,7 +66,7 @@ export function LandingOutro() {
         className="absolute left-1/2 top-[44%] h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(176,139,242,0.26), rgba(138,160,255,0.10) 44%, transparent 68%)",
+            "radial-gradient(circle, rgba(233,225,209,0.26), rgba(201,168,106,0.10) 44%, transparent 68%)",
           opacity: shown ? 1 : 0,
           transform: `translate(-50%,-50%) scale(${shown ? 1.1 : 0.7})`,
           transition: `opacity .8s ease, transform 1s ${EASE_OUT}`,
@@ -78,7 +78,7 @@ export function LandingOutro() {
         <BubbleMark
           className="relative h-[84px] w-[84px]"
           style={{
-            filter: "drop-shadow(0 6px 30px rgba(176,139,242,0.6))",
+            filter: "drop-shadow(0 6px 30px rgba(233,225,209,0.6))",
             opacity: shown ? 1 : 0,
             transform: shown ? "translateY(0) scale(1)" : "translateY(16px) scale(0.6)",
             transition: `opacity .6s ease, transform .9s ${EASE_OUT}`,
@@ -96,7 +96,7 @@ export function LandingOutro() {
           }}
         >
           <div className="relative inline-block">
-            <div className="text-[38px] font-semibold leading-none tracking-tight text-fg">
+            <div className="font-serif text-[44px] font-semibold leading-none tracking-tight text-fg">
               Market Bubble
             </div>
             {phase >= 2 && (
@@ -112,7 +112,7 @@ export function LandingOutro() {
               />
             )}
           </div>
-          <div className="mt-3 text-[13px] font-medium uppercase tracking-[0.34em] text-[#c6bdf0]">
+          <div className="mt-3.5 text-[12px] font-medium uppercase tracking-[0.32em] text-[#cabba0]">
             Every stream · One chat
           </div>
         </div>

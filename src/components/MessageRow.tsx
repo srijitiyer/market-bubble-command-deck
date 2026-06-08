@@ -89,8 +89,8 @@ function MessageRowBase({
           fresh && "animate-msg-in",
         )}
         style={{
-          background: "rgba(176,139,242,0.07)",
-          boxShadow: "inset 0 0 0 1px rgba(176,139,242,0.22)",
+          background: "rgba(233,225,209,0.07)",
+          boxShadow: "inset 0 0 0 1px rgba(233,225,209,0.22)",
         }}
       >
         <Megaphone className="mt-[3px] h-3.5 w-3.5 shrink-0 text-brand" />

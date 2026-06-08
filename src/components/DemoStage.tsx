@@ -30,7 +30,7 @@ export function DemoStage({ stream }: { stream: StreamChannel }) {
       className="relative flex h-full w-full items-center justify-center overflow-hidden"
       style={{
         background:
-          "radial-gradient(120% 90% at 50% -10%, rgba(177,108,255,0.18), transparent 60%), linear-gradient(160deg,#0c0e16,#06070b)",
+          "radial-gradient(120% 90% at 50% -10%, rgba(233,225,209,0.12), transparent 60%), linear-gradient(160deg,#121212,#070707)",
       }}
     >
       {/* faint studio grid */}
