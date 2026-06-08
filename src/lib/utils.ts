@@ -43,19 +43,21 @@ export function profileUrl(platform: Platform, username: string): string {
 
 // Curated username palette: one family at fixed lightness (~74%) and saturation
 // (~50%) so names read as a set, not a rainbow. All pass 4.5:1 on the dark bg.
+// Warm, low-saturation earth tones so names sit inside the cream/gold/black
+// brand instead of reading as a neon rainbow.
 const USERNAME_COLORS = [
-  "#e090a0", // rose
-  "#e0a574", // amber
-  "#d6bd6e", // gold
-  "#a9cf7e", // sage
-  "#74cc9e", // mint
-  "#6fccc4", // teal
-  "#76bdd9", // sky
-  "#8ab0e6", // blue
-  "#a99ce6", // periwinkle
-  "#c298de", // lavender
-  "#d68fce", // orchid
-  "#e08eae", // pink
+  "#c4917a", // terracotta
+  "#c6a86e", // ochre
+  "#aca873", // olive
+  "#94ad8c", // sage
+  "#7fa8a0", // muted teal
+  "#85a0bd", // slate blue
+  "#ad94b0", // muted mauve
+  "#c592a0", // dusty rose
+  "#b6a085", // taupe
+  "#cbac72", // gold
+  "#a0b0a0", // grey sage
+  "#bfa0ac", // dusty pink
 ];
 
 // Deterministic color from a string (stable per-username from the curated set)
@@ -90,7 +92,7 @@ export function normalizeUserColor(hex: string): string {
     else h = (r - g) / d + 4;
     h /= 6;
   }
-  const cs = Math.min(s, 0.55);
+  const cs = Math.min(s, 0.38); // hard cap saturation so neon names calm down
   const cl = 0.66 + 0.1 * l; // map any lightness into ~0.66-0.76
   return `hsl(${Math.round(h * 360)} ${Math.round(cs * 100)}% ${Math.round(cl * 100)}%)`;
 }

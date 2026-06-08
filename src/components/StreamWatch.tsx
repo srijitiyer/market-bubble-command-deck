@@ -6,7 +6,35 @@ import { useDeck, channelKey } from "@/lib/store";
 import { PLATFORMS, type StreamChannel } from "@/lib/types";
 import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
-import { DemoStage } from "./DemoStage";
+
+// A real, always-on crypto livestream used as the demo broadcast so the deck
+// shows an actual stream playing (the Market Bubble show's own VOD has embedding
+// disabled). Swap demo OFF + add a live Twitch/Kick channel for the real source.
+const DEMO_VIDEO_ID = "fJBVcGBztwE";
+
+function ShowReplay() {
+  return (
+    <div className="relative h-full w-full bg-black">
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`}
+        title="Live crypto broadcast"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+        className="h-full w-full"
+        frameBorder={0}
+      />
+      <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
+        <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
+          Live
+        </span>
+        <span className="rounded bg-white/10 px-1 text-[9px] font-medium uppercase tracking-wider text-dim">
+          Demo
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function StreamEmbed({
   stream,
@@ -19,7 +47,7 @@ function StreamEmbed({
 }) {
   const { platform, channel } = stream;
 
-  if (demo) return <DemoStage stream={stream} />;
+  if (demo) return <ShowReplay />;
 
   if (platform === "twitch") {
     if (!host) return <EmbedSkeleton />;

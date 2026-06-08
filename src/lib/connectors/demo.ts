@@ -128,7 +128,7 @@ export function makeDemoMessage(platform: Platform, channel: string): ChatMessag
       channel,
       username: take.name.toLowerCase(),
       displayName: take.name,
-      color: take.host === "ansem" ? "#5ad1c4" : "#e0a574",
+      color: take.host === "ansem" ? "#7fb0a8" : "#e0a574",
       text: take.text,
       badges: [{ type: "broadcaster" }],
       timestamp: Date.now(),

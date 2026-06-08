@@ -30,19 +30,19 @@
   --color-brand: #e9e1d1;
   --color-brand-2: #c9a86a;
 
-  /* platform — FULL neon only for tiny (<=16px) glyphs/pips */
-  --color-twitch: #a970ff;
-  --color-kick: #53fc18;
-  --color-x: #e7e9ea;
-  /* platform — MUTED (chroma-capped) for anything larger: rails, chips, labels */
-  --color-twitch-muted: #9a7fd0;
-  --color-kick-muted: #74bf6a;
-  --color-x-muted: #b0b5bf;
+  /* platform — toned to sit inside the warm-monochrome brand (no neon) */
+  --color-twitch: #a892c2;
+  --color-kick: #86bd7b;
+  --color-x: #d9d5cd;
+  /* platform — MUTED for anything larger: rails, chips, labels, glyphs */
+  --color-twitch-muted: #968aa6;
+  --color-kick-muted: #8aa585;
+  --color-x-muted: #b4afa6;
 
-  /* market semantics — only on numbers / deltas; pos cooler than Kick green */
-  --color-pos: #3fc28a;
-  --color-neg: #f0676a;
-  --color-warn: #e0b44e;
+  /* market semantics — muted sage / clay so they live in the cream world */
+  --color-pos: #6f9f76;
+  --color-neg: #c57c6f;
+  --color-warn: #c9a86a;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

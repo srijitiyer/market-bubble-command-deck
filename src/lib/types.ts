@@ -76,26 +76,26 @@ export const PLATFORMS: Record<Platform, PlatformMeta> = {
   twitch: {
     id: "twitch",
     name: "Twitch",
-    accent: "#a970ff",
-    muted: "#9a7fd0",
-    tint: "rgba(145,70,255,0.13)",
-    glow: "rgba(145,70,255,0.4)",
+    accent: "#a892c2",
+    muted: "#968aa6",
+    tint: "rgba(150,138,166,0.14)",
+    glow: "rgba(150,138,166,0.3)",
   },
   kick: {
     id: "kick",
     name: "Kick",
-    accent: "#53fc18",
-    muted: "#74bf6a",
-    tint: "rgba(116,191,106,0.12)",
-    glow: "rgba(116,191,106,0.38)",
+    accent: "#86bd7b",
+    muted: "#8aa585",
+    tint: "rgba(138,165,133,0.14)",
+    glow: "rgba(138,165,133,0.3)",
   },
   x: {
     id: "x",
     name: "X",
-    accent: "#e7e9ea",
-    muted: "#b0b5bf",
-    tint: "rgba(231,233,234,0.09)",
-    glow: "rgba(120,160,255,0.32)",
+    accent: "#d9d5cd",
+    muted: "#b4afa6",
+    tint: "rgba(217,213,205,0.1)",
+    glow: "rgba(217,213,205,0.26)",
   },
 };
 
@@ -110,8 +110,8 @@ export interface HostMeta {
 }
 
 export const HOSTS: HostMeta[] = [
-  { id: "ansem", name: "Ansem", handle: "blknoiz06", role: "the trade flow", accent: "#5ad1c4" },
-  { id: "banks", name: "Banks", handle: "fazebanks", role: "the distribution", accent: "#e0a574" },
+  { id: "ansem", name: "Ansem", handle: "blknoiz06", role: "the trade flow", accent: "#7fb0a8" },
+  { id: "banks", name: "Banks", handle: "fazebanks", role: "the distribution", accent: "#cBa274" },
 ];
 
 // Show identity (lifted from Market Bubble's own positioning).
