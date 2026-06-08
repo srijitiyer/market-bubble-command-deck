@@ -8,17 +8,19 @@ import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 
 // A real, always-on crypto livestream used as the demo broadcast so the deck
-// shows an actual stream playing (the Market Bubble show's own VOD has embedding
-// disabled). Swap demo OFF + add a live Twitch/Kick channel for the real source.
-const DEMO_VIDEO_ID = "fJBVcGBztwE";
+// shows an actual past broadcast playing. We embed a real FaZe Banks (Market
+// Bubble co-host) Twitch VOD via the Twitch player. Swap demo OFF + add a live
+// Twitch/Kick channel for a real first-party source.
+const DEMO_VOD_ID = "2788673017"; // fazebanks — "Let's Talk About View Botting"
 
-function ShowReplay() {
+function ShowReplay({ host }: { host: string | null }) {
+  if (!host) return <EmbedSkeleton />;
   return (
     <div className="relative h-full w-full bg-black">
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1`}
-        title="Live crypto broadcast"
-        allow="autoplay; encrypted-media; picture-in-picture"
+        src={`https://player.twitch.tv/?video=${DEMO_VOD_ID}&parent=${host}&autoplay=true&muted=true`}
+        title="Market Bubble — past broadcast"
+        allow="autoplay; fullscreen"
         allowFullScreen
         className="h-full w-full"
         frameBorder={0}
@@ -26,10 +28,10 @@ function ShowReplay() {
       <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
         <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
-          Live
+          Replay
         </span>
         <span className="rounded bg-white/10 px-1 text-[9px] font-medium uppercase tracking-wider text-dim">
-          Demo
+          Market Bubble
         </span>
       </div>
     </div>
@@ -47,7 +49,7 @@ function StreamEmbed({
 }) {
   const { platform, channel } = stream;
 
-  if (demo) return <ShowReplay />;
+  if (demo) return <ShowReplay host={host} />;
 
   if (platform === "twitch") {
     if (!host) return <EmbedSkeleton />;

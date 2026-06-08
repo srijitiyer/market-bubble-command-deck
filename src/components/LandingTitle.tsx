@@ -153,14 +153,27 @@ export function LandingTitle() {
             transition: `opacity .55s ease, transform .7s ${EASE_OUT}`,
           }}
         >
+          {/* show pillars — masthead kicker */}
+          <div className="mb-4 flex items-center justify-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#cabba0]">
+            <span>Make Money</span>
+            <span className="text-faint">·</span>
+            <span>Command Attention</span>
+            <span className="text-faint">·</span>
+            <span>Leverage AI</span>
+          </div>
           <div
-            className="font-serif text-[46px] font-semibold leading-none tracking-tight text-white"
+            className="font-serif text-[48px] font-semibold leading-none tracking-tight text-white"
             style={{ textShadow: "0 2px 28px rgba(233,225,209,0.4)" }}
           >
             Market Bubble
           </div>
-          <div className="mt-4 text-[12px] font-medium uppercase tracking-[0.32em] text-[#cabba0]">
-            Presented by Polymarket
+          {/* hairline rule + presented-by lockup */}
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <span className="h-px w-8 bg-[rgba(233,225,209,0.35)]" />
+            <span className="font-serif text-[13px] italic text-[#cabba0]">
+              Presented by Polymarket
+            </span>
+            <span className="h-px w-8 bg-[rgba(233,225,209,0.35)]" />
           </div>
         </div>
       </div>
