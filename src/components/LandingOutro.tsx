@@ -29,8 +29,8 @@ export function LandingOutro() {
       setTimeout(() => setPhase(1), 60),
       setTimeout(() => setPhase(2), 760),
       setTimeout(() => setPhase(3), 1500),
-      setTimeout(() => setPhase(4), 4200),
-      setTimeout(() => setPhase(-1), 4900),
+      setTimeout(() => setPhase(4), 5600), // hold the lockup longer so it lands
+      setTimeout(() => setPhase(-1), 6300),
     ];
   }, []);
 
@@ -49,13 +49,20 @@ export function LandingOutro() {
       className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
       style={{ opacity: phase >= 4 ? 0 : 1, transition: "opacity 0.6s ease" }}
     >
-      {/* veil */}
+      {/* veil — fully opaque so the sign-off lands on a clean field, not the deck */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "#070707",
+          opacity: phase === 0 ? 0 : 1,
+          transition: "opacity 0.55s ease",
+        }}
+      />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(62% 60% at 50% 46%, rgba(8,9,13,0.92), rgba(6,7,11,0.99) 72%)",
-          backdropFilter: "blur(5px)",
+            "radial-gradient(62% 60% at 50% 46%, rgba(26,22,16,0.85), transparent 72%)",
           opacity: phase === 0 ? 0 : 1,
           transition: "opacity 0.55s ease",
         }}
@@ -82,7 +89,7 @@ export function LandingOutro() {
             opacity: shown ? 1 : 0,
             transform: shown ? "translateY(0) scale(1)" : "translateY(16px) scale(0.6)",
             transition: `opacity .6s ease, transform .9s ${EASE_OUT}`,
-            animation: phase >= 2 ? "float-bubble 4s ease-in-out infinite" : "none",
+            animation: phase >= 3 ? "orb-bob 4s ease-in-out infinite" : "none",
           }}
         />
 

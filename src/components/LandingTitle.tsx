@@ -56,13 +56,13 @@ export function LandingTitle() {
       className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
       style={{ opacity: phase >= 4 ? 0 : 1, transition: "opacity 0.5s ease" }}
     >
-      {/* backdrop */}
+      {/* backdrop — fully opaque so the deck never bleeds through the cold-open */}
+      <div className="absolute inset-0" style={{ background: "#070707" }} />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(64% 60% at 50% 47%, rgba(8,9,13,0.94), rgba(6,7,11,0.99) 72%)",
-          backdropFilter: "blur(4px)",
+            "radial-gradient(64% 60% at 50% 47%, rgba(26,22,16,0.9), transparent 72%)",
         }}
       />
 
@@ -71,7 +71,7 @@ export function LandingTitle() {
         className="absolute left-1/2 top-[46%] h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(233,225,209,0.22), rgba(138,160,255,0.10) 42%, transparent 68%)",
+            "radial-gradient(circle, rgba(233,225,209,0.22), rgba(201,168,106,0.10) 42%, transparent 68%)",
           opacity: phase === 0 ? 0 : bloom ? 1 : 0.5,
           transform: `translate(-50%,-50%) scale(${bloom ? 1.15 : 0.85})`,
           transition: `opacity .9s ease, transform 1.1s ${EASE_OUT}`,

@@ -8,12 +8,19 @@ import { getEmote } from "@/lib/emotes";
 import { PlatformIcon } from "./icons";
 import { CashTag } from "./CashTag";
 
-// Muted, cohesive per-platform tint for the small gutter glyph (full neon would
-// shout; these read as a quiet source label, not decoration).
+// Per-platform source identity. The merged feed's whole job is "which platform
+// is this from, at a glance" — so the glyph uses the (toned, not neon) accent
+// hue, and a colored rail runs down the row so the source is legible on EVERY
+// row, including author-group continuations.
 const GLYPH_CLASS: Record<ChatMessage["platform"], string> = {
-  twitch: "text-twitch-muted",
-  kick: "text-kick-muted",
-  x: "text-x-muted",
+  twitch: "text-twitch",
+  kick: "text-kick",
+  x: "text-x",
+};
+const RAIL: Record<ChatMessage["platform"], string> = {
+  twitch: "var(--color-twitch)",
+  kick: "var(--color-kick)",
+  x: "var(--color-x)",
 };
 
 function renderText(text: string) {
@@ -115,12 +122,20 @@ function MessageRowBase({
         "pb-px",
         fresh && "animate-msg-in",
       )}
+      aria-label={`${msg.displayName} from ${meta.name}: ${msg.text}`}
     >
-      {/* fixed-width source gutter — small muted platform glyph, head of group only */}
+      {/* platform source rail — present on EVERY row so the source is legible
+          even on author-group continuations (the core "unified, labeled" claim) */}
+      <span
+        className="absolute left-[6px] top-0 h-full w-[2px] rounded-full"
+        style={{ background: RAIL[msg.platform], opacity: 0.65 }}
+        aria-hidden
+      />
+      {/* source glyph in the gutter — head of group only, in the platform hue */}
       {firstOfGroup && (
         <span
           className={cn(
-            "absolute left-[8px] top-[3px] flex h-4 w-4 items-center justify-center opacity-90",
+            "absolute left-[11px] top-[3px] flex h-4 w-4 items-center justify-center",
             GLYPH_CLASS[msg.platform],
           )}
           title={`${meta.name} · #${msg.channel}`}
@@ -145,7 +160,7 @@ function MessageRowBase({
             </a>
           </span>
         )}
-        <span className="text-[#d4d7df]">{renderText(msg.text)}</span>
+        <span className="text-fg/90">{renderText(msg.text)}</span>
       </div>
 
       <div className="flex shrink-0 items-start gap-1 pl-1">

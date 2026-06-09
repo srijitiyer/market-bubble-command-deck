@@ -35,7 +35,7 @@ export function SentimentMeter() {
       </div>
 
       {/* sentiment bar with needle */}
-      <div className="relative h-2 w-full overflow-hidden rounded-full bg-gradient-to-r from-[#f6465d]/40 via-white/10 to-[#2ebd85]/40">
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-gradient-to-r from-neg/40 via-white/10 to-pos/40">
         <div
           className="absolute top-1/2 h-3.5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-700"
           style={{ left: `${pos}%`, background: color, boxShadow: `0 0 8px ${color}` }}
@@ -62,7 +62,7 @@ export function SentimentMeter() {
               width: `${Math.max(4, hype * 100)}%`,
               background:
                 hype > 0.45
-                  ? "linear-gradient(90deg,#f5a623,#f6465d)"
+                  ? "linear-gradient(90deg,var(--color-warn),var(--color-neg))"
                   : "rgba(255,255,255,0.25)",
             }}
           />

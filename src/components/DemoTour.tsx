@@ -389,24 +389,22 @@ export function DemoTour() {
         cur.style.transition = `transform ${CUR_MS}ms ${EASE}`;
       }
       await sleep(500);
-      deck.setViewMode("stage"); // back to the hero for the sign-off
-      await sleep(700);
       if (cancelled) return;
 
-      // FINAL — sign-off, then the cinematic outro
-      showCaption("Market Bubble", "Every stream. One chat.");
-      await move(window.innerWidth * 0.5, window.innerHeight * 0.5);
-      await sleep(1500);
+      // SIGN-OFF — straight into the cinematic outro (its own wordmark IS the
+      // sign-off). Going direct from the deck reveal under the opaque outro veil
+      // avoids a black re-mounting video frame. Make sure nothing's paused.
+      deck.setPaused(false);
       hideCaption();
       cur.style.opacity = "0";
-      await sleep(350);
+      await sleep(300);
 
       // OUTRO — cinematic bookend (orb + wordmark + glyph row)
       const playOutro = (window as unknown as { __playOutro?: () => void })
         .__playOutro;
       if (playOutro) {
         playOutro();
-        await sleep(4900);
+        await sleep(6300);
       }
       (window as unknown as { __tourActive?: boolean }).__tourActive = false;
     };

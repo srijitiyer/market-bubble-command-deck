@@ -77,9 +77,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(56rem 38rem at 10% -12%, rgba(177, 108, 255, 0.08), transparent 60%),
-    radial-gradient(48rem 34rem at 102% -4%, rgba(108, 140, 255, 0.06), transparent 55%),
-    radial-gradient(44rem 30rem at 72% 116%, rgba(83, 252, 24, 0.035), transparent 60%);
+    radial-gradient(56rem 38rem at 10% -12%, rgba(233, 225, 209, 0.06), transparent 60%),
+    radial-gradient(48rem 34rem at 102% -4%, rgba(201, 168, 106, 0.05), transparent 55%),
+    radial-gradient(44rem 30rem at 72% 116%, rgba(233, 225, 209, 0.03), transparent 60%);
 }
 
 /* Fine grain to kill banding on the gradients */
@@ -115,7 +115,7 @@ body::after {
   outline: none;
   box-shadow:
     0 0 0 2px var(--color-bg),
-    0 0 0 4px rgba(184, 139, 255, 0.7);
+    0 0 0 4px rgba(201, 168, 106, 0.7);
   border-radius: 6px;
 }
 
@@ -208,6 +208,18 @@ body.mb-resizing * {
   }
 }
 
+/* outro orb — a gentle bob that stays put and stays visible (unlike
+   float-bubble, which drifts up and fades out) */
+@keyframes orb-bob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1);
+  }
+}
+
 /* intro shockwave ring */
 @keyframes shock {
   from {
@@ -238,7 +250,7 @@ body.mb-resizing * {
 /* Bloomberg-style tick flash on value change */
 @keyframes tick-up {
   0% {
-    background: rgba(46, 189, 133, 0.22);
+    background: rgba(111, 159, 118, 0.22);
   }
   100% {
     background: transparent;
@@ -246,7 +258,7 @@ body.mb-resizing * {
 }
 @keyframes tick-down {
   0% {
-    background: rgba(246, 70, 93, 0.22);
+    background: rgba(197, 124, 111, 0.22);
   }
   100% {
     background: transparent;
@@ -333,8 +345,8 @@ body.mb-resizing * {
 
 .glow-brand {
   box-shadow:
-    0 0 0 1px rgba(184, 139, 255, 0.35),
-    0 8px 40px -12px rgba(184, 139, 255, 0.5);
+    0 0 0 1px rgba(201, 168, 106, 0.35),
+    0 8px 40px -12px rgba(233, 225, 209, 0.45);
 }
 
 /* --- respect reduced motion --------------------------------------------- */

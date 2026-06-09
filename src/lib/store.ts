@@ -101,18 +101,11 @@ function scheduleFlush(get: () => DeckState, set: SetFn) {
     const incoming = buffer;
     buffer = [];
     const state = get();
-    if (state.paused) {
-      // While paused we still count + keep stats but cap the held backlog.
-      applyStats(incoming, set, get);
-      // keep messages array as-is (frozen view) but stash newest so resume shows them
-    }
-    const merged = state.paused
-      ? state.messages
-      : [...state.messages, ...incoming].slice(-MAX_MESSAGES);
-    if (!state.paused) {
-      set({ messages: merged });
-      applyStats(incoming, set, get);
-    }
+    // Always append (even while paused) so resume genuinely scrolls back to the
+    // messages that arrived — the "N new" pill then points at real content, and
+    // nothing is silently dropped. Pause only freezes autoscroll (UnifiedFeed).
+    set({ messages: [...state.messages, ...incoming].slice(-MAX_MESSAGES) });
+    applyStats(incoming, set, get);
     // Audio cue for high-signal traffic (broadcaster/mod or mentions).
     if (state.soundOn && incoming.some((m) => m.isBroadcaster || m.isMod)) {
       blip();
@@ -380,7 +373,17 @@ export const useDeck = create<DeckState>((set, get) => ({
     const next = !get().demoMode;
     // reconnect every channel under the new mode
     get().disconnectAll();
-    set({ demoMode: next });
+    // Clear the feed + stats so the new mode starts honest: turning demo OFF
+    // must not leave synthetic chatter on screen (real channels may be offline).
+    buffer = [];
+    set({
+      demoMode: next,
+      messages: [],
+      totalMessages: 0,
+      totalByPlatform: { twitch: 0, kick: 0, x: 0 },
+      recentTimestamps: [],
+      paused: false,
+    });
     persist(get);
     // small delay so sockets close cleanly
     setTimeout(() => get().connectAll(), 120);

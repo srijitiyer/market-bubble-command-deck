@@ -22,7 +22,7 @@ export function FeaturedBar() {
         style={{
           borderColor: "rgba(233,225,209,0.3)",
           background:
-            "linear-gradient(100deg, rgba(233,225,209,0.1), rgba(138,160,255,0.05))",
+            "linear-gradient(100deg, rgba(233,225,209,0.1), rgba(201,168,106,0.06))",
         }}
       >
         <div className="flex items-center gap-1.5 pt-0.5">
