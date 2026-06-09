@@ -1,30 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Tv } from "lucide-react";
 import { useDeck, channelKey } from "@/lib/store";
 import { PLATFORMS, type StreamChannel } from "@/lib/types";
 import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 
-// A real, always-on crypto livestream used as the demo broadcast so the deck
-// shows an actual past broadcast playing. We embed a real FaZe Banks (Market
-// Bubble co-host) Twitch VOD via the Twitch player. Swap demo OFF + add a live
-// Twitch/Kick channel for a real first-party source.
-const DEMO_VOD_ID = "2788673017"; // fazebanks — "Let's Talk About View Botting"
+// The demo broadcast: a real FaZe Banks / Market Bubble Twitch VOD (Ansem +
+// Banks, Polymarket lower-third). We drive it through Twitch's JS player API so
+// we can force a *muted* play() on ready — plain iframe autoplay is unreliable
+// for VODs, but muted programmatic playback is always allowed by browsers.
+const DEMO_VOD_ID = "2788673017"; // fazebanks — Market Bubble broadcast
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TwitchGlobal = { Player: any };
 
 function ShowReplay({ host }: { host: string | null }) {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!host || !mountRef.current) return;
+    const mount = mountRef.current;
+    let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let player: any;
+
+    const create = () => {
+      const Twitch = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
+      if (cancelled || !Twitch?.Player || !mount) return;
+      mount.innerHTML = "";
+      player = new Twitch.Player(mount, {
+        video: DEMO_VOD_ID,
+        parent: [host],
+        autoplay: true,
+        muted: true,
+        width: "100%",
+        height: "100%",
+      });
+      const start = () => {
+        try {
+          player.setMuted(true);
+          player.play();
+        } catch {
+          /* ignore */
+        }
+      };
+      player.addEventListener(Twitch.Player.READY, start);
+      // Twitch gates VOD playback behind a user gesture; kick it off on the
+      // first interaction anywhere on the page so it starts without hunting for
+      // the play button.
+      const onGesture = () => {
+        start();
+        window.removeEventListener("pointerdown", onGesture);
+        window.removeEventListener("keydown", onGesture);
+      };
+      window.addEventListener("pointerdown", onGesture);
+      window.addEventListener("keydown", onGesture);
+    };
+
+    const existing = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
+    if (existing?.Player) {
+      create();
+    } else {
+      const id = "twitch-embed-js";
+      let s = document.getElementById(id) as HTMLScriptElement | null;
+      if (s) {
+        s.addEventListener("load", create);
+      } else {
+        s = document.createElement("script");
+        s.id = id;
+        s.src = "https://player.twitch.tv/js/embed/v1.js";
+        s.onload = create;
+        document.body.appendChild(s);
+      }
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [host]);
+
   if (!host) return <EmbedSkeleton />;
   return (
     <div className="relative h-full w-full bg-black">
-      <iframe
-        src={`https://player.twitch.tv/?video=${DEMO_VOD_ID}&parent=${host}&autoplay=true&muted=true`}
-        title="Market Bubble — past broadcast"
-        allow="autoplay; fullscreen"
-        allowFullScreen
-        className="h-full w-full"
-        frameBorder={0}
-      />
+      <div ref={mountRef} className="h-full w-full" />
       <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
         <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
