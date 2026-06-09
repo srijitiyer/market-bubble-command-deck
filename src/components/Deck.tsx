@@ -30,6 +30,7 @@ import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
 import { PanelHeader } from "./PanelHeader";
 import { DemoTour } from "./DemoTour";
+import { DemoShowcase } from "./DemoShowcase";
 
 const SEED = [
   { platform: "twitch" as const, channel: "marketbubble" },
@@ -192,6 +193,7 @@ export function Deck() {
       <LandingOutro />
       <CommandPalette />
       <DemoTour />
+      <DemoShowcase />
 
       {/* the zoomable stage (everything the tour can zoom into) */}
       <div

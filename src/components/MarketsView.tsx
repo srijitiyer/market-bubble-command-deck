@@ -45,7 +45,10 @@ export function MarketsView() {
   return (
     <div className="flex min-h-0 flex-1 gap-3 overflow-y-auto p-3">
       {/* Global markets table */}
-      <section className="panel flex min-w-0 flex-1 flex-col overflow-hidden">
+      <section
+        className="panel flex min-w-0 flex-1 flex-col overflow-hidden"
+        data-tour="markets"
+      >
         <PanelHeader
           title="Global Markets"
           aside={<span className="eyebrow text-faint">live · coingecko</span>}

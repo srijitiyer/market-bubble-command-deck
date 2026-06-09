@@ -420,8 +420,9 @@ export function DemoTour() {
     window.addEventListener("keydown", onKey);
 
     let auto: ReturnType<typeof setTimeout> | undefined;
-    if (typeof window !== "undefined" && /[?&]tour=1\b/.test(window.location.search)) {
-      // page-load intro plays first (~3.3s); start beats just after it fades
+    // Preserved legacy tour — the new spotlight showcase (DemoShowcase) owns
+    // ?tour=1 now. This one is kept accessible via ?tour=legacy or Shift+T.
+    if (typeof window !== "undefined" && /[?&]tour=legacy\b/.test(window.location.search)) {
       auto = setTimeout(() => void run(true), 4000);
     }
     return () => {
