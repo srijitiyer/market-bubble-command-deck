@@ -5,7 +5,7 @@ import { useDeck } from "@/lib/store";
 
 // A self-playing cinematic tour of the deck for recording the demo video.
 // Drives a glowing cursor, auto-zooms into each beat (Screen-Studio style),
-// and shows styled caption cards. Trigger with ?tour=1, Shift+T, or
+// and shows styled caption cards. Trigger with ?tour=legacy, Shift+L, or
 // window.__startTour().
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -415,13 +415,13 @@ export function DemoTour() {
       void run();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.shiftKey && (e.key === "T" || e.key === "t")) void run();
+      if (e.shiftKey && (e.key === "L" || e.key === "l")) void run();
     };
     window.addEventListener("keydown", onKey);
 
     let auto: ReturnType<typeof setTimeout> | undefined;
     // Preserved legacy tour — the new spotlight showcase (DemoShowcase) owns
-    // ?tour=1 now. This one is kept accessible via ?tour=legacy or Shift+T.
+    // Shift+T now. This one is kept accessible via ?tour=legacy or Shift+L.
     if (typeof window !== "undefined" && /[?&]tour=legacy\b/.test(window.location.search)) {
       auto = setTimeout(() => void run(true), 4000);
     }
