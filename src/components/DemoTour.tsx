@@ -246,18 +246,20 @@ export function DemoTour() {
       await sleep(200);
       if (cancelled) return;
 
-      // BEAT 4 — hover a viewer → see their platform (the C-suite ask)
+      // BEAT 4 — hover a viewer → see their platform (the C-suite ask).
+      // Zoom the whole audience panel (gentle) and point at one dot — never
+      // zoom into the tiny dot itself (that crops to a confusing close-up).
       showCaption("Live audience", "Hover any viewer → see their platform", true);
       const aud = q('[data-tour="audience"]');
       await bring(aud);
       deck.setPaused(true);
+      if (aud) await zoomTo(aud, 1.45);
       const dot = aud
         ? [...aud.querySelectorAll("a[href]")].find((a) =>
             /^[A-Z0-9]$/.test(a.textContent?.trim() || ""),
           )
         : null;
       if (dot) {
-        await zoomTo(dot, 2);
         await moveToEl(dot);
         hover(dot);
         await sleep(2500);
@@ -268,19 +270,19 @@ export function DemoTour() {
       await sleep(250);
       if (cancelled) return;
 
-      // BEAT 5 — cashtag → live price card
+      // BEAT 5 — cashtag → live price card (zoom the feed, point at the chip)
       showCaption("Crypto-native", "Cashtags → live price, right in chat", true);
       deck.broadcast("eyeing $SOL here, this could send 👀");
       await sleep(450);
       deck.setPaused(true);
       await sleep(250);
+      if (chat) await zoomTo(chat, 1.4);
       const chip = chat
         ? [...chat.querySelectorAll("a")]
             .filter((a) => (a.textContent?.trim() || "")[0] === "$")
             .pop()
         : null;
       if (chip) {
-        await zoomTo(chip, 2.1);
         await moveToEl(chip);
         hover(chip);
         await sleep(2600);
@@ -290,26 +292,28 @@ export function DemoTour() {
       await sleep(250);
       if (cancelled) return;
 
-      // BEAT 6 — host switch (Ansem / Banks)
+      // BEAT 6 — host switch (Ansem / Banks). No zoom: the switch sits at the
+      // top-right of the stream and the payoff is the feed re-filtering on the
+      // right — keep the whole layout in frame so both are visible.
       showCaption("Filter by host", "Follow Ansem or Banks across every platform");
+      hero?.scrollIntoView({ block: "start" });
+      await sleep(450);
       const hs = q('[data-tour="hostswitch"]');
       if (hs) {
-        await zoomTo(hs, 1.9);
-        const ansem = [...hs.querySelectorAll("button")].find(
-          (b) => b.textContent?.trim() === "Ansem",
-        );
+        const btn = (label: string) =>
+          [...hs.querySelectorAll("button")].find(
+            (b) => b.textContent?.trim() === label,
+          );
+        const ansem = btn("Ansem");
         if (ansem) {
           await moveToEl(ansem);
           ripple();
           ansem.click();
-          await sleep(2000);
+          await sleep(2400);
         }
-        [...hs.querySelectorAll("button")]
-          .find((b) => b.textContent?.trim() === "Both")
-          ?.click();
-        await zoomReset();
+        btn("Both")?.click();
       }
-      await sleep(250);
+      await sleep(300);
       if (cancelled) return;
 
       // BEAT 7 — live Polymarket odds (on-brand differentiator)
@@ -317,7 +321,7 @@ export function DemoTour() {
       const odds = q('[data-tour="odds"]');
       await bring(odds);
       if (odds) {
-        await zoomTo(odds, 1.7);
+        await zoomTo(odds, 1.5);
         await moveToEl(odds);
         await sleep(2500);
         await zoomReset();
@@ -325,13 +329,14 @@ export function DemoTour() {
       await sleep(200);
       if (cancelled) return;
 
-      // BEAT 8 — one shared chat (the kill-shot)
+      // BEAT 8 — one shared chat (the kill-shot): zoom the feed so the typed
+      // broadcast is visible landing in the room.
       showCaption("The kill-shot", "Type once → one shared chat");
       const composer = q(
         'input[aria-label="Broadcast to the shared chat"]',
       ) as HTMLInputElement | null;
-      if (composer) {
-        await zoomTo(composer, 1.7);
+      if (composer && chat) {
+        await zoomTo(chat, 1.38);
         await moveToEl(composer);
         await typeInto(composer, "gm degens — we are SO back, ape $BUBBLE");
         await sleep(200);
