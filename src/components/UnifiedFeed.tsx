@@ -120,8 +120,10 @@ export function UnifiedFeed() {
         )}
       </div>
 
-      {/* Paused / jump-to-live pill */}
-      {paused && (
+      {/* Paused / jump-to-live pill (hidden while the cinematic tour drives) */}
+      {paused &&
+        !(typeof window !== "undefined" &&
+          (window as unknown as { __tourActive?: boolean }).__tourActive) && (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
           <button
             onClick={resume}

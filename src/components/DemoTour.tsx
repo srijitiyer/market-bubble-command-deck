@@ -76,8 +76,12 @@ export function DemoTour() {
       const ux = (r.left + r.width / 2 - TX) / S;
       const uy = (r.top + r.height / 2 - TY) / S;
       S = scale;
-      TX = window.innerWidth / 2 - ux * S;
-      TY = window.innerHeight / 2 - uy * S;
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      // Clamp the pan so the (top-left-anchored) stage always fully covers the
+      // viewport — otherwise zooming into an edge element reveals black borders.
+      TX = Math.min(0, Math.max(W - S * W, W / 2 - ux * S));
+      TY = Math.min(0, Math.max(H - S * H, H / 2 - uy * S));
       applyZoom();
       await sleep(ZOOM_MS + 60);
     };
@@ -97,21 +101,26 @@ export function DemoTour() {
     // ---- caption card (pops up next to the cursor and travels with it) ----
     const POP = "cubic-bezier(0.34, 1.56, 0.64, 1)"; // slight overshoot = "pop"
     let capEl: HTMLElement | null = null;
-    // Anchor the card just above-right of the cursor tip, flipping/clamping so
-    // it always stays fully on-screen near the action.
+    let capBelow = false; // place the card below the cursor (clears hovercards)
+    // Anchor the card next to the cursor tip, flipping/clamping so it always
+    // stays fully on-screen near the action.
     const placeCaption = (x: number, y: number) => {
       if (!capEl) return;
+      const W = window.innerWidth;
+      const H = window.innerHeight;
       const cw = capEl.offsetWidth || 280;
       const ch = capEl.offsetHeight || 54;
       let left = x + 22;
-      let top = y - ch - 16;
-      if (left + cw > window.innerWidth - 16) left = x - cw - 18;
+      let top = capBelow ? y + 30 : y - ch - 16;
+      if (left + cw > W - 16) left = x - cw - 18;
       if (left < 16) left = 16;
-      if (top < 88) top = y + 30;
+      if (!capBelow && top < 88) top = y + 30;
+      if (capBelow && top + ch > H - 16) top = y - ch - 16;
       capEl.style.left = `${left}px`;
       capEl.style.top = `${top}px`;
     };
-    const showCaption = (kicker: string, text: string) => {
+    const showCaption = (kicker: string, text: string, below = false) => {
+      capBelow = below;
       if (!capEl) {
         capEl = document.createElement("div");
         capEl.id = "__tcap";
@@ -127,7 +136,7 @@ export function DemoTour() {
       capEl.innerHTML =
         '<span style="width:3px;height:32px;border-radius:3px;background:linear-gradient(180deg,#e9e1d1,#c9a86a);box-shadow:0 0 10px rgba(233,225,209,.6)"></span>' +
         '<span style="display:flex;flex-direction:column;gap:3px">' +
-        `<span style="font:700 9px/1 ui-sans-serif,system-ui;letter-spacing:.16em;text-transform:uppercase;color:#c4b6f5">${kicker}</span>` +
+        `<span style="font:700 9px/1 ui-sans-serif,system-ui;letter-spacing:.16em;text-transform:uppercase;color:#cabba0">${kicker}</span>` +
         `<span style="font:600 16px/1.15 ui-sans-serif,system-ui;letter-spacing:-.01em;color:#f3f4f8">${text}</span>` +
         "</span>";
       // place at the cursor without gliding (it's still invisible), then pop in
@@ -166,6 +175,13 @@ export function DemoTour() {
         if (cancelled) return;
         setter.call(input, text.slice(0, i));
         input.dispatchEvent(new Event("input", { bubbles: true }));
+        // Keep the caret (and the rightmost text) in view, like a real input.
+        try {
+          input.setSelectionRange(i, i);
+          input.scrollLeft = input.scrollWidth;
+        } catch {
+          /* some input types disallow selection */
+        }
         await sleep(step);
       }
     };
@@ -176,6 +192,7 @@ export function DemoTour() {
       const deck = useDeck.getState();
 
       // Make sure we open on the broadcast Stage with live traffic flowing.
+      (window as unknown as { __tourActive?: boolean }).__tourActive = true;
       deck.setViewMode("stage");
       if (!deck.demoMode) deck.toggleDemo();
 
@@ -230,7 +247,7 @@ export function DemoTour() {
       if (cancelled) return;
 
       // BEAT 4 — hover a viewer → see their platform (the C-suite ask)
-      showCaption("Live audience", "Hover any viewer → see their platform");
+      showCaption("Live audience", "Hover any viewer → see their platform", true);
       const aud = q('[data-tour="audience"]');
       await bring(aud);
       deck.setPaused(true);
@@ -252,7 +269,7 @@ export function DemoTour() {
       if (cancelled) return;
 
       // BEAT 5 — cashtag → live price card
-      showCaption("Crypto-native", "Cashtags → live price, right in chat");
+      showCaption("Crypto-native", "Cashtags → live price, right in chat", true);
       deck.broadcast("eyeing $SOL here, this could send 👀");
       await sleep(450);
       deck.setPaused(true);
@@ -386,6 +403,7 @@ export function DemoTour() {
         playOutro();
         await sleep(4900);
       }
+      (window as unknown as { __tourActive?: boolean }).__tourActive = false;
     };
 
     (window as unknown as { __startTour?: () => void }).__startTour = () => {
