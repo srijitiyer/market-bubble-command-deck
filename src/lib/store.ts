@@ -518,4 +518,51 @@ export function platformShare(state: DeckState): Record<Platform, number> {
   return counts;
 }
 
+// Unique chatters currently in the merged buffer (the "active audience" count).
+export function activeChatters(state: DeckState): number {
+  const set = new Set<string>();
+  for (const m of state.messages) {
+    if (!m.isHost) set.add(`${m.platform}:${m.username}`);
+  }
+  return set.size;
+}
+
+export interface LeaderRow {
+  username: string;
+  displayName: string;
+  platform: Platform;
+  color: string;
+  count: number;
+  cashtags: number; // $ticker mentions — "moving the market"
+}
+
+// Live chat leaderboard: who's driving the conversation right now, ranked by
+// message volume, with how many cashtags they've fired. Computed off the real
+// merged feed (the competitor's leaderboard is static).
+export function chatLeaderboard(state: DeckState, limit = 7): LeaderRow[] {
+  const map = new Map<string, LeaderRow>();
+  for (const m of state.messages) {
+    if (m.isHost) continue;
+    const key = `${m.platform}:${m.username}`;
+    const ex = map.get(key);
+    const tags = m.tickers?.length ?? 0;
+    if (ex) {
+      ex.count += 1;
+      ex.cashtags += tags;
+    } else {
+      map.set(key, {
+        username: m.username,
+        displayName: m.displayName,
+        platform: m.platform,
+        color: m.color,
+        count: 1,
+        cashtags: tags,
+      });
+    }
+  }
+  return [...map.values()]
+    .sort((a, b) => b.count - a.count || b.cashtags - a.cashtags)
+    .slice(0, limit);
+}
+
 export { PLATFORM_LIST };
