@@ -43,10 +43,10 @@ export function StageView() {
               <span className="eyebrow text-dim">{SHOW.schedule}</span>
             </span>
           </div>
-          <div className="relative">
+          <div className="relative" data-tour="hero">
             <StreamWatch />
             <div className="pointer-events-none absolute right-2.5 top-2.5">
-              <div className="pointer-events-auto">
+              <div className="pointer-events-auto" data-tour="hostswitch">
                 <HostSwitch />
               </div>
             </div>
@@ -58,18 +58,24 @@ export function StageView() {
           <section className="panel flex flex-col p-4">
             <StatsDeck />
           </section>
-          <section className="panel flex flex-col gap-5 p-4">
+          <section
+            className="panel flex flex-col gap-5 p-4"
+            data-tour="audience"
+          >
             <SentimentMeter />
             <AudiencePanel />
           </section>
-          <section className="panel flex flex-col p-4">
+          <section className="panel flex flex-col p-4" data-tour="odds">
             <PolymarketOdds />
           </section>
         </div>
       </div>
 
       {/* RIGHT — the merged live chat */}
-      <aside className="panel flex w-[380px] shrink-0 flex-col overflow-hidden xl:w-[420px]">
+      <aside
+        className="panel flex w-[380px] shrink-0 flex-col overflow-hidden xl:w-[420px]"
+        data-tour="chat"
+      >
         <PanelHeader
           title="Unified Feed"
           aside={

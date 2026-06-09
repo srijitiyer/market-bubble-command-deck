@@ -175,8 +175,8 @@ export function DemoTour() {
       if (!stage) return;
       const deck = useDeck.getState();
 
-      // Make sure the feed is alive for the recording — flip on synthetic
-      // traffic across every source if it isn't already running.
+      // Make sure we open on the broadcast Stage with live traffic flowing.
+      deck.setViewMode("stage");
       if (!deck.demoMode) deck.toggleDemo();
 
       // INTRO — replay the cinematic cold-open so it's part of every recording.
@@ -192,58 +192,127 @@ export function DemoTour() {
       }
       cur = buildCursor();
 
-      // BEAT 1 — hero
-      showCaption("Market Bubble", "Twitch + Kick + X · one live chat");
-      await move(window.innerWidth * 0.5, window.innerHeight * 0.52);
-      await sleep(2600);
+      const q = (s: string) => document.querySelector<HTMLElement>(s);
+      const bring = async (el: Element | null | undefined) => {
+        if (!el) return;
+        el.scrollIntoView({ block: "center" });
+        await sleep(420);
+      };
+
+      // BEAT 1 — hero wide
+      showCaption("Market Bubble", "Twitch · Kick · X — one live deck");
+      await move(window.innerWidth * 0.5, window.innerHeight * 0.5);
+      await sleep(2200);
       if (cancelled) return;
 
-      // BEAT 2 — audience origin card (zoom into the live-audience strip)
-      showCaption("Live audience", "Hover any viewer → see their platform");
-      deck.setPaused(true);
+      // BEAT 2 — the live broadcast, native in the deck
+      showCaption("Watch live", "The show, playing right in the deck");
+      const hero = q('[data-tour="hero"]');
+      if (hero) {
+        await zoomTo(hero, 1.35);
+        await moveToEl(hero);
+        await sleep(2300);
+        await zoomReset();
+      }
       await sleep(200);
-      const dot = [...document.querySelectorAll("aside a[href]")].filter((a) =>
-        /^[A-Z0-9]$/.test(a.textContent?.trim() || ""),
-      )[4];
+      if (cancelled) return;
+
+      // BEAT 3 — the merged real-time feed (our edge: actually live, labeled)
+      showCaption("One merged feed", "Every chat, live and source-labeled");
+      const chat = q('[data-tour="chat"]');
+      if (chat) {
+        await zoomTo(chat, 1.32);
+        await moveToEl(chat);
+        await sleep(2600);
+        await zoomReset();
+      }
+      await sleep(200);
+      if (cancelled) return;
+
+      // BEAT 4 — hover a viewer → see their platform (the C-suite ask)
+      showCaption("Live audience", "Hover any viewer → see their platform");
+      const aud = q('[data-tour="audience"]');
+      await bring(aud);
+      deck.setPaused(true);
+      const dot = aud
+        ? [...aud.querySelectorAll("a[href]")].find((a) =>
+            /^[A-Z0-9]$/.test(a.textContent?.trim() || ""),
+          )
+        : null;
       if (dot) {
-        await zoomTo(dot, 1.9);
+        await zoomTo(dot, 2);
         await moveToEl(dot);
         hover(dot);
-        await sleep(2700);
+        await sleep(2500);
         unhover(dot);
       }
       await zoomReset();
       deck.setPaused(false);
-      await sleep(400);
+      await sleep(250);
       if (cancelled) return;
 
-      // BEAT 3 — cashtag price card (broadcast a $SOL line so a chip is
-      // guaranteed present, then zoom to it)
+      // BEAT 5 — cashtag → live price card
       showCaption("Crypto-native", "Cashtags → live price, right in chat");
       deck.broadcast("eyeing $SOL here, this could send 👀");
       await sleep(450);
       deck.setPaused(true);
       await sleep(250);
-      const chips = [...document.querySelectorAll("main a")].filter(
-        (a) => (a.textContent?.trim() || "")[0] === "$",
-      );
-      const chip = chips[chips.length - 1];
+      const chip = chat
+        ? [...chat.querySelectorAll("a")]
+            .filter((a) => (a.textContent?.trim() || "")[0] === "$")
+            .pop()
+        : null;
       if (chip) {
-        await zoomTo(chip, 2);
+        await zoomTo(chip, 2.1);
         await moveToEl(chip);
         hover(chip);
-        await sleep(2800);
+        await sleep(2600);
       }
       await zoomReset();
       deck.setPaused(false);
-      await sleep(400);
+      await sleep(250);
       if (cancelled) return;
 
-      // BEAT 4 — one shared chat broadcast
+      // BEAT 6 — host switch (Ansem / Banks)
+      showCaption("Filter by host", "Follow Ansem or Banks across every platform");
+      const hs = q('[data-tour="hostswitch"]');
+      if (hs) {
+        await zoomTo(hs, 1.9);
+        const ansem = [...hs.querySelectorAll("button")].find(
+          (b) => b.textContent?.trim() === "Ansem",
+        );
+        if (ansem) {
+          await moveToEl(ansem);
+          ripple();
+          ansem.click();
+          await sleep(2000);
+        }
+        [...hs.querySelectorAll("button")]
+          .find((b) => b.textContent?.trim() === "Both")
+          ?.click();
+        await zoomReset();
+      }
+      await sleep(250);
+      if (cancelled) return;
+
+      // BEAT 7 — live Polymarket odds (on-brand differentiator)
+      showCaption("Live odds · Polymarket", "Markets on every take they make");
+      const odds = q('[data-tour="odds"]');
+      await bring(odds);
+      if (odds) {
+        await zoomTo(odds, 1.7);
+        await moveToEl(odds);
+        await sleep(2500);
+        await zoomReset();
+      }
+      await sleep(200);
+      if (cancelled) return;
+
+      // BEAT 8 — one shared chat (the kill-shot)
       showCaption("The kill-shot", "Type once → one shared chat");
-      const composer = document.querySelector<HTMLInputElement>(
+      const composer = q(
         'input[aria-label="Broadcast to the shared chat"]',
-      );
+      ) as HTMLInputElement | null;
       if (composer) {
         await zoomTo(composer, 1.7);
         await moveToEl(composer);
@@ -255,25 +324,24 @@ export function DemoTour() {
         await moveToEl(btn);
         ripple();
         btn?.click();
-        await sleep(1600);
+        await sleep(1500);
         await zoomReset();
-        await sleep(900);
+        await sleep(700);
       }
       if (cancelled) return;
 
-      // BEAT 5 — resize panels
-      showCaption("Your layout", "Resize anything · drag to taste");
-      const sep = document.querySelectorAll("[data-separator]")[1];
-      if (sep) await moveToEl(sep);
+      // BEAT 9 — reveal the full power-user Deck (+ a resize flourish)
+      showCaption("Command deck", "Or go full command deck — resize anything");
+      deck.setViewMode("deck");
+      await sleep(900); // let the panel group mount
       const setL = (
         window as unknown as { __mbSetLayout?: (l: Record<string, number>) => void }
       ).__mbSetLayout;
-      if (setL) {
+      const sep = document.querySelectorAll("[data-separator]")[1];
+      if (setL && sep) {
         const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-        // cursor tracks the handle instantly (handle itself moves smoothly)
         cur.style.transition = "none";
         const track = () => {
-          if (!sep) return;
           const r = sep.getBoundingClientRect();
           const hx = r.left + r.width / 2 - 8;
           const hy = r.top + r.height / 2 - 5;
@@ -282,47 +350,31 @@ export function DemoTour() {
           cur.dataset.y = String(hy);
           placeCaption(hx, hy);
         };
-        const steps = 26;
+        const steps = 24;
         for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
-          const t = i / steps;
-          setL({ left: 17, center: lerp(53, 45, t), right: lerp(30, 38, t) });
+          setL({ left: 17, center: lerp(53, 45, i / steps), right: lerp(30, 38, i / steps) });
           track();
           await sleep(34);
         }
-        await sleep(550);
+        await sleep(450);
         for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
-          const t = i / steps;
-          setL({ left: 17, center: lerp(45, 53, t), right: lerp(38, 30, t) });
+          setL({ left: 17, center: lerp(45, 53, i / steps), right: lerp(38, 30, i / steps) });
           track();
           await sleep(34);
         }
         cur.style.transition = `transform ${CUR_MS}ms ${EASE}`;
       }
+      await sleep(500);
+      deck.setViewMode("stage"); // back to the hero for the sign-off
       await sleep(700);
       if (cancelled) return;
 
-      // BEAT 6 — command palette (no zoom — it's a fixed modal)
-      showCaption("Command deck", "⌘K · drive the whole thing");
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
-      await sleep(850);
-      const pal = document.querySelector<HTMLInputElement>(
-        'input[placeholder="Type a command…"]',
-      );
-      if (pal) {
-        await move(window.innerWidth * 0.5, window.innerHeight * 0.33);
-        await typeInto(pal, "filter", 75);
-        await sleep(1900);
-      }
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-      await sleep(600);
-      if (cancelled) return;
-
-      // BEAT 7 — glance across the deck, then the cinematic sign-off
+      // FINAL — sign-off, then the cinematic outro
       showCaption("Market Bubble", "Every stream. One chat.");
-      await move(window.innerWidth * 0.82, window.innerHeight * 0.5);
-      await sleep(1700);
+      await move(window.innerWidth * 0.5, window.innerHeight * 0.5);
+      await sleep(1500);
       hideCaption();
       cur.style.opacity = "0";
       await sleep(350);
