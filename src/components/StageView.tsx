@@ -34,7 +34,7 @@ export function StageView() {
         </span>
       </section>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row" data-tour="row">
         {/* LEFT — stage + intelligence */}
         <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
           {/* hero stream — centered and height-capped so the intelligence strip

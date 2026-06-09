@@ -3,14 +3,25 @@
 import { useEffect } from "react";
 import { useDeck } from "@/lib/store";
 
-// A cinematic spotlight walkthrough — dims the deck and glides a single glowing
-// highlight from feature to feature, with clean crossfading serif captions and
-// smooth veil transitions between sections. No content zoom, no synthetic
-// cursor, no hard cuts. Auto-plays on ?tour=1, or window.__playShowcase().
+// The product film. A chaptered, cinematic walkthrough:
 //
-// (The earlier zoom/cursor tour is preserved in DemoTour.tsx — ?tour=legacy.)
+//   - The deck is gently inset into a "frame" for the duration of the film,
+//     reserving a black band at the bottom of the screen. ALL narration lives
+//     there as a fixed lower-third (kicker + serif headline), so text can never
+//     overlap content or run off screen.
+//   - A soft spotlight glides between large regions; small features are shown
+//     by their own interactions (hovercards, typing, clicks), never by
+//     shrinking the spotlight onto tiny targets.
+//   - Sections (Command Deck, Markets, Leaderboard) are introduced by serif
+//     chapter cards on an opaque field; the view switches under the card, so
+//     there are no visible swaps or cuts.
+//
+// Auto-plays on ?tour=1; replay with Shift+S or window.__playShowcase().
+// (The older zoom/cursor tour is preserved at ?tour=legacy / Shift+T.)
+
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
-const MOVE = 820;
+const MOVE = 900;
+const SCALE = 0.9;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type WinHooks = {
@@ -18,6 +29,7 @@ type WinHooks = {
   __playIntro?: () => void;
   __playOutro?: () => void;
   __playShowcase?: () => void;
+  __mbSetLayout?: (l: Record<string, number>) => void;
 };
 const win = () => window as unknown as Window & WinHooks;
 
@@ -25,21 +37,33 @@ export function DemoShowcase() {
   useEffect(() => {
     let cancelled = false;
 
-    // ---- spotlight overlay (a transparent window with a huge dimming shadow) -
+    // ---- the frame: inset the whole deck, reserving the lower third --------
+    const stage = document.getElementById("deck-stage");
+    const frameOn = async () => {
+      if (!stage) return;
+      stage.style.transition = `transform 1100ms ${EASE}`;
+      stage.style.transformOrigin = "50% 0";
+      stage.style.transform = `scale(${SCALE})`;
+      await sleep(1150);
+    };
+    const frameOff = () => {
+      if (!stage) return;
+      stage.style.transform = "";
+      stage.style.transformOrigin = "0 0";
+    };
+
+    // ---- spotlight (transparent window in a dimming field) -----------------
     const ring =
-      "inset 0 0 0 1px rgba(233,225,209,0.4), 0 0 44px rgba(233,225,209,0.12)";
+      "inset 0 0 0 1px rgba(233,225,209,0.38), 0 0 40px rgba(233,225,209,0.1)";
     const spot = document.createElement("div");
     spot.id = "__spot";
     spot.style.cssText =
-      "position:fixed;pointer-events:none;z-index:60;border-radius:16px;" +
-      "left:50%;top:50%;width:0;height:0;opacity:0;" +
-      `box-shadow:0 0 0 5000px rgba(6,6,7,0.55), ${ring};` +
-      `transition:left ${MOVE}ms ${EASE},top ${MOVE}ms ${EASE},width ${MOVE}ms ${EASE},height ${MOVE}ms ${EASE},box-shadow .45s ease,opacity .5s ease;`;
+      "position:fixed;pointer-events:none;z-index:60;border-radius:14px;" +
+      "left:50%;top:40%;width:0;height:0;opacity:0;" +
+      `box-shadow:0 0 0 5000px rgba(5,5,6,0.55), ${ring};` +
+      `transition:left ${MOVE}ms ${EASE},top ${MOVE}ms ${EASE},width ${MOVE}ms ${EASE},height ${MOVE}ms ${EASE},opacity .5s ease;`;
     document.body.appendChild(spot);
-    const setDim = (a: number) => {
-      spot.style.boxShadow = `0 0 0 5000px rgba(6,6,7,${a}), ${ring}`;
-    };
-    const spotlight = async (el: Element | null, pad = 10, instant = false) => {
+    const spotlight = async (el: Element | null, pad = 8, instant = false) => {
       if (!el) return;
       const r = el.getBoundingClientRect();
       if (instant) spot.style.transition = "none";
@@ -49,52 +73,77 @@ export function DemoShowcase() {
       spot.style.height = `${r.height + pad * 2}px`;
       if (instant) {
         void spot.offsetWidth;
-        spot.style.transition = `left ${MOVE}ms ${EASE},top ${MOVE}ms ${EASE},width ${MOVE}ms ${EASE},height ${MOVE}ms ${EASE},box-shadow .45s ease,opacity .5s ease`;
+        spot.style.transition = `left ${MOVE}ms ${EASE},top ${MOVE}ms ${EASE},width ${MOVE}ms ${EASE},height ${MOVE}ms ${EASE},opacity .5s ease`;
       }
       spot.style.opacity = "1";
-      await sleep(instant ? 80 : MOVE + 60);
+      await sleep(instant ? 60 : MOVE + 80);
+    };
+    const spotOff = () => {
+      spot.style.opacity = "0";
     };
 
-    // ---- caption card -----------------------------------------------------
-    const cap = document.createElement("div");
-    cap.id = "__cap";
-    cap.style.cssText =
-      "position:fixed;z-index:61;max-width:380px;opacity:0;transform:translateY(10px);pointer-events:none;" +
-      `transition:opacity .45s ease,transform .5s ${EASE},left .6s ${EASE},top .6s ${EASE};`;
-    document.body.appendChild(cap);
-    const setText = (kicker: string, body: string) => {
-      cap.innerHTML =
-        `<div style="font-family:var(--font-serif),Georgia,serif;font-style:italic;font-weight:600;font-size:12px;letter-spacing:.04em;color:#cabba0;margin-bottom:9px">${kicker}</div>` +
-        `<div style="font-family:var(--font-serif),Georgia,serif;font-weight:600;font-size:23px;line-height:1.28;letter-spacing:-.01em;color:#f4f2ec;text-shadow:0 2px 18px rgba(0,0,0,.6)">${body}</div>`;
-    };
-    const place = () => {
-      const sr = spot.getBoundingClientRect();
-      const cw = cap.offsetWidth || 360;
-      const ch = cap.offsetHeight || 70;
-      let top = sr.bottom + 22;
-      if (top + ch > window.innerHeight - 24) top = sr.top - ch - 22;
-      top = Math.max(24, Math.min(top, window.innerHeight - ch - 24));
-      let left = sr.left + sr.width / 2 - cw / 2;
-      left = Math.min(Math.max(left, 24), window.innerWidth - cw - 24);
-      cap.style.left = `${left}px`;
-      cap.style.top = `${top}px`;
-    };
-    const say = async (kicker: string, body: string) => {
-      cap.style.opacity = "0";
-      cap.style.transform = "translateY(10px)";
-      await sleep(220);
+    // ---- lower-third narration (fixed, in the reserved band) ---------------
+    const third = document.createElement("div");
+    third.id = "__third";
+    third.style.cssText =
+      "position:fixed;left:0;right:0;bottom:0;z-index:61;pointer-events:none;" +
+      "display:flex;flex-direction:column;align-items:center;justify-content:center;" +
+      `height:${Math.round((1 - SCALE) * 100)}vh;min-height:64px;padding:0 32px;` +
+      "opacity:0;transition:opacity .4s ease;text-align:center;";
+    third.innerHTML =
+      '<div id="__third_k" style="font:600 10px/1 ui-sans-serif,system-ui;letter-spacing:.3em;text-transform:uppercase;color:#c9a86a;margin-bottom:7px"></div>' +
+      '<div id="__third_h" style="font-family:var(--font-serif),Georgia,serif;font-weight:600;font-size:clamp(16px,2.6vh + 4px,24px);line-height:1.2;letter-spacing:-.01em;color:#f2efe8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92vw"></div>';
+    document.body.appendChild(third);
+    const say = async (kicker: string, headline: string) => {
+      third.style.opacity = "0";
+      await sleep(260);
       if (cancelled) return;
-      setText(kicker, body);
-      place();
-      void cap.offsetWidth;
-      cap.style.opacity = "1";
-      cap.style.transform = "translateY(0)";
+      (third.querySelector("#__third_k") as HTMLElement).textContent = kicker;
+      (third.querySelector("#__third_h") as HTMLElement).textContent = headline;
+      third.style.opacity = "1";
+    };
+    const hush = () => {
+      third.style.opacity = "0";
     };
 
-    // ---- helpers ----------------------------------------------------------
+    // ---- chapter cards (opaque field, serif title) --------------------------
+    const card = document.createElement("div");
+    card.id = "__chapter";
+    card.style.cssText =
+      "position:fixed;inset:0;z-index:62;background:#070707;opacity:0;pointer-events:none;" +
+      "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;" +
+      "transition:opacity .55s ease;";
+    document.body.appendChild(card);
+    const chapter = async (numeral: string, title: string, work?: () => void | Promise<void>) => {
+      card.innerHTML =
+        `<div style="font:600 11px/1 ui-sans-serif,system-ui;letter-spacing:.34em;text-transform:uppercase;color:#c9a86a">${numeral}</div>` +
+        '<div style="display:flex;align-items:center;gap:18px">' +
+        '<span style="height:1px;width:44px;background:rgba(233,225,209,.3)"></span>' +
+        `<span style="font-family:var(--font-serif),Georgia,serif;font-weight:600;font-size:40px;letter-spacing:-.01em;color:#f2efe8">${title}</span>` +
+        '<span style="height:1px;width:44px;background:rgba(233,225,209,.3)"></span>' +
+        "</div>";
+      hush();
+      card.style.opacity = "1";
+      await sleep(620);
+      if (cancelled) return;
+      await work?.(); // switch views under the opaque card
+      await sleep(1250);
+      card.style.opacity = "0";
+      await sleep(580);
+    };
+
+    // ---- interaction helpers ------------------------------------------------
     const q = (s: string) => document.querySelector(s);
-    const fire = (el: Element | null | undefined, types: string[]) =>
-      el && types.forEach((t) => el.dispatchEvent(new MouseEvent(t, { bubbles: true })));
+    const hover = (el: Element | null | undefined) =>
+      el &&
+      ["pointerover", "mouseover", "mouseenter"].forEach((t) =>
+        el.dispatchEvent(new MouseEvent(t, { bubbles: true })),
+      );
+    const unhover = (el: Element | null | undefined) =>
+      el &&
+      ["mouseout", "mouseleave", "pointerout"].forEach((t) =>
+        el.dispatchEvent(new MouseEvent(t, { bubbles: true })),
+      );
     const typeInto = async (input: HTMLInputElement, text: string) => {
       const setter = Object.getOwnPropertyDescriptor(
         HTMLInputElement.prototype,
@@ -111,19 +160,11 @@ export function DemoShowcase() {
         } catch {
           /* ignore */
         }
-        await sleep(34);
+        await sleep(36);
       }
     };
-    const switchTo = async (section: "live" | "markets" | "leaders") => {
-      setDim(0.98); // veil up to hide the swap
-      cap.style.opacity = "0";
-      await sleep(460);
-      if (cancelled) return;
-      useDeck.getState().setSection(section);
-      await sleep(620); // let the new section render
-    };
 
-    // ---- choreography -----------------------------------------------------
+    // ---- the film -----------------------------------------------------------
     const run = async (skipIntro = false) => {
       win().__tourActive = true;
       const d = useDeck.getState();
@@ -137,107 +178,146 @@ export function DemoShowcase() {
         await sleep(3700);
       }
       if (cancelled) return;
-      await sleep(450); // settle after the intro fades
 
-      // 1 — the whole deck
+      // settle, then frame the deck
+      await sleep(400);
+      await frameOn();
+      if (cancelled) return;
+
+      // ACT I — the live room
       await spotlight(q("#deck-stage"), 0);
-      await say("Market Bubble", "Every stream, every chat, one command deck.");
-      await sleep(2700);
+      await say("Market Bubble", "Every stream and every chat, on one screen.");
+      await sleep(3000);
+      if (cancelled) return;
 
-      // 2 — the broadcast
-      await spotlight(q('[data-tour="hero"]'), 8);
-      await say("Watch live", "The show plays right inside the deck.");
-      await sleep(2700);
+      await spotlight(q('[data-tour="hero"]'));
+      await say("The broadcast", "The show plays natively inside the deck.");
+      await sleep(2900);
+      if (cancelled) return;
 
-      // 3 — merged feed
-      await spotlight(q('[data-tour="chat"]'), 8);
-      await say(
-        "One unified feed",
-        "Twitch, Kick and X merged live, every message labeled with its source.",
-      );
-      await sleep(3700);
+      await spotlight(q('[data-tour="chat"]'));
+      await say("One feed", "Twitch, Kick and X merged in real time. Every message labeled.");
+      await sleep(3600);
+      if (cancelled) return;
 
-      // 4 — hover a viewer
-      await spotlight(q('[data-tour="audience"]'), 8);
-      await say("Know the room", "Hover any viewer to see which platform they came from.");
+      await spotlight(q('[data-tour="audience"]'));
+      await say("Know the room", "Hover any viewer to see where they watch from.");
       const dots = [
         ...document.querySelectorAll('[data-tour="audience"] a[href]'),
       ].filter((a) => /^[A-Z0-9]$/.test(a.textContent?.trim() || ""));
       const dot = dots[3] || dots[0];
-      fire(dot, ["pointerover", "mouseover", "mouseenter"]);
-      await sleep(2900);
-      fire(dot, ["mouseout", "mouseleave"]);
+      hover(dot);
+      await sleep(3000);
+      unhover(dot);
+      if (cancelled) return;
 
-      // 5 — cashtag price
-      d.broadcast("eyeing $SOL here, this could send 👀");
+      useDeck.getState().broadcast("eyeing $SOL here, this could send 👀");
       await sleep(500);
-      await spotlight(q('[data-tour="chat"]'), 8);
-      await say("Crypto-native", "Cashtags open a live price card, right inside the chat.");
+      await spotlight(q('[data-tour="chat"]'));
+      await say("Crypto native", "Cashtags pull live prices straight into chat.");
       const chip = [...document.querySelectorAll('[data-tour="chat"] a')]
         .filter((a) => (a.textContent?.trim() || "")[0] === "$")
         .pop();
-      fire(chip, ["pointerover", "mouseover", "mouseenter"]);
-      await sleep(3100);
-      fire(chip, ["mouseout", "mouseleave"]);
+      hover(chip);
+      await sleep(3200);
+      unhover(chip);
+      if (cancelled) return;
 
-      // 6 — one shared chat
       await spotlight(q('[data-tour="composer"]'), 10);
-      await say("One shared chat", "Broadcast once and it lands in the unified room.");
+      await say("One shared chat", "Type once and the whole room sees it.");
       const composer = q(
         'input[aria-label="Broadcast to the shared chat"]',
       ) as HTMLInputElement | null;
       if (composer) {
         await typeInto(composer, "gm degens, we are SO back");
-        await sleep(300);
+        await sleep(350);
         composer
           .closest("form")
           ?.querySelector<HTMLButtonElement>('button[type="submit"]')
           ?.click();
       }
-      await sleep(2000);
+      await sleep(1900);
+      if (cancelled) return;
 
-      // 7 — host switch
-      await spotlight(q('[data-tour="hostswitch"]'), 8);
-      await say("Follow a host", "Filter the whole room to Ansem or Banks.");
+      await spotlight(q('[data-tour="row"]'), 4);
+      await say("Follow the hosts", "One click filters everything to Ansem or Banks.");
       const hostBtn = (label: string) =>
         [...document.querySelectorAll('[data-tour="hostswitch"] button')].find(
           (b) => b.textContent?.trim() === label,
         ) as HTMLButtonElement | undefined;
       hostBtn("Ansem")?.click();
-      await sleep(2700);
+      await sleep(3000);
       hostBtn("Both")?.click();
+      if (cancelled) return;
 
-      // 8 — Polymarket odds
-      await spotlight(q('[data-tour="odds"]'), 8);
-      await say("Live odds", "Real Polymarket markets on every take, straight from their API.");
+      await spotlight(q('[data-tour="odds"]'));
+      await say("Live odds", "Real Polymarket markets, priced in real time.");
       await sleep(3100);
+      if (cancelled) return;
 
-      // 9 — Markets section
-      await switchTo("markets");
-      await spotlight(q('[data-tour="markets"]'), 8, true);
-      setDim(0.55);
-      await say("Markets", "A live markets board. Real prices, real sparklines, real odds.");
-      await sleep(3300);
+      // ACT II — the command deck (power view)
+      await chapter("Chapter II", "The Command Deck", () => {
+        useDeck.getState().setViewMode("deck");
+      });
+      if (cancelled) return;
+      await spotlight(q("#deck-stage"), 0, true);
+      await say("Built for operators", "A full multi-panel deck. Drag anything to resize.");
+      const setL = win().__mbSetLayout;
+      if (setL) {
+        const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+        const steps = 22;
+        for (let i = 1; i <= steps; i++) {
+          if (cancelled) return;
+          setL({ left: 17, center: lerp(53, 45, i / steps), right: lerp(30, 38, i / steps) });
+          await sleep(30);
+        }
+        await sleep(420);
+        for (let i = 1; i <= steps; i++) {
+          if (cancelled) return;
+          setL({ left: 17, center: lerp(45, 53, i / steps), right: lerp(38, 30, i / steps) });
+          await sleep(30);
+        }
+      }
+      await sleep(900);
+      if (cancelled) return;
 
-      // 10 — Leaderboard section
-      await switchTo("leaders");
-      await spotlight(q('[data-tour="leaders"]'), 8, true);
-      setDim(0.55);
-      await say("Leaderboard", "And a live ranking of who's driving the conversation.");
-      await sleep(3300);
+      // ACT III — markets
+      await chapter("Chapter III", "Markets", () => {
+        useDeck.getState().setSection("markets");
+      });
+      if (cancelled) return;
+      await spotlight(q('[data-tour="markets"]'), 6, true);
+      await say("The tape", "Live prices, sparklines and market caps from CoinGecko.");
+      await sleep(3400);
+      if (cancelled) return;
 
-      // CLOSE — veil, reset to the stage, hand off to the outro
-      setDim(0.98);
-      cap.style.opacity = "0";
-      await sleep(460);
+      // ACT IV — leaderboard
+      await chapter("Chapter IV", "Leaderboard", () => {
+        useDeck.getState().setSection("leaders");
+      });
+      if (cancelled) return;
+      await spotlight(q('[data-tour="leaders"]'), 6, true);
+      await say("Who moves the room", "A live ranking built from the merged feed.");
+      await sleep(3400);
+      if (cancelled) return;
+
+      // CLOSE — black, restore everything under cover, then the sign-off
+      card.innerHTML = "";
+      card.style.opacity = "1";
+      await sleep(620);
+      spotOff();
+      hush();
+      frameOff();
       const dd = useDeck.getState();
       dd.setSection("live");
       dd.setViewMode("stage");
-      spot.style.opacity = "0";
-      await sleep(420);
       if (win().__playOutro) {
-        win().__playOutro!();
-        await sleep(6300);
+        win().__playOutro!(); // outro's own field is the same opaque #070707
+        await sleep(150);
+        card.style.opacity = "0";
+        await sleep(6200);
+      } else {
+        card.style.opacity = "0";
       }
       win().__tourActive = false;
     };
@@ -260,7 +340,9 @@ export function DemoShowcase() {
       if (auto) clearTimeout(auto);
       window.removeEventListener("keydown", onKey);
       spot.remove();
-      cap.remove();
+      third.remove();
+      card.remove();
+      frameOff();
       win().__tourActive = false;
     };
   }, []);
