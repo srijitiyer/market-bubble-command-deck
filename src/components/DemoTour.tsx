@@ -193,6 +193,7 @@ export function DemoTour() {
 
       // Make sure we open on the broadcast Stage with live traffic flowing.
       (window as unknown as { __tourActive?: boolean }).__tourActive = true;
+      deck.setSection("live");
       deck.setViewMode("stage");
       if (!deck.demoMode) deck.toggleDemo();
 

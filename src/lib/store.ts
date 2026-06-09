@@ -48,6 +48,7 @@ interface DeckState {
   featured: ChatMessage | null; // message pinned to the featured/overlay slot
   emotesReady: boolean; // flips true once global emote sets load
   viewMode: "stage" | "deck"; // hero broadcast stage vs power-user deck
+  section: "live" | "markets" | "leaders"; // top-level nav section
   hostFilter: "all" | string; // stage host switch (e.g. "ansem" | "banks")
 
   // actions
@@ -71,6 +72,7 @@ interface DeckState {
   toggleSound: () => void;
   setActiveStream: (key: string | null) => void;
   setViewMode: (m: "stage" | "deck") => void;
+  setSection: (s: "live" | "markets" | "leaders") => void;
   setHostFilter: (h: "all" | string) => void;
   refreshMeta: () => void;
   broadcast: (text: string) => void;
@@ -195,6 +197,7 @@ export const useDeck = create<DeckState>((set, get) => ({
   featured: null,
   emotesReady: false,
   viewMode: "stage",
+  section: "live",
   hostFilter: "all",
 
   addChannel: (platform, channel, opts) => {
@@ -401,6 +404,7 @@ export const useDeck = create<DeckState>((set, get) => ({
 
   setActiveStream: (key) => set({ activeStream: key }),
   setViewMode: (m) => set({ viewMode: m, hostFilter: "all" }),
+  setSection: (s) => set({ section: s }),
   setHostFilter: (h) => set({ hostFilter: h }),
 
   setFeatured: (msg) => set({ featured: msg }),
@@ -516,6 +520,24 @@ export function platformShare(state: DeckState): Record<Platform, number> {
   const counts = emptyByPlatform();
   for (const m of state.messages) counts[m.platform] += 1;
   return counts;
+}
+
+// Most-mentioned $cashtags across the live feed (what the room is talking about).
+export function topCashtags(
+  state: DeckState,
+  limit = 8,
+): { symbol: string; count: number }[] {
+  const map = new Map<string, number>();
+  for (const m of state.messages) {
+    for (const t of m.tickers ?? []) {
+      const sym = t.toUpperCase();
+      map.set(sym, (map.get(sym) ?? 0) + 1);
+    }
+  }
+  return [...map.entries()]
+    .map(([symbol, count]) => ({ symbol, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
 }
 
 // Unique chatters currently in the merged buffer (the "active audience" count).

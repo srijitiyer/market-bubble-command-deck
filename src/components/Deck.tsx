@@ -23,6 +23,8 @@ import { SharedComposer } from "./SharedComposer";
 import { LandingTitle } from "./LandingTitle";
 import { LandingOutro } from "./LandingOutro";
 import { StageView } from "./StageView";
+import { MarketsView } from "./MarketsView";
+import { LeaderboardView } from "./LeaderboardView";
 import { FeaturedBar } from "./FeaturedBar";
 import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
@@ -58,6 +60,7 @@ export function Deck() {
   const setEmotesReady = useDeck((s) => s.setEmotesReady);
   const demoMode = useDeck((s) => s.demoMode);
   const viewMode = useDeck((s) => s.viewMode);
+  const section = useDeck((s) => s.section);
   const seeded = useRef(false);
   const isDesktop = useIsDesktop();
   const groupRef = useRef<GroupImperativeHandle | null>(null);
@@ -201,7 +204,11 @@ export function Deck() {
         <TickerRail />
       </div>
 
-      {viewMode === "stage" ? (
+      {section === "markets" ? (
+        <MarketsView />
+      ) : section === "leaders" ? (
+        <LeaderboardView />
+      ) : viewMode === "stage" ? (
         <StageView />
       ) : isDesktop ? (
         <Group

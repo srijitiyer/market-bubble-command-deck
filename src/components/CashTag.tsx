@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   getMarketForSymbol,
   formatPrice,
@@ -9,6 +9,7 @@ import {
   SYMBOL_TO_ID,
   type MarketRow,
 } from "@/lib/prices";
+import { cn } from "@/lib/utils";
 import { Sparkline } from "./Sparkline";
 
 // A $CASHTAG in chat that reveals a live price card on hover. Crypto-native
@@ -17,10 +18,15 @@ export function CashTag({ symbol }: { symbol: string }) {
   const sym = symbol.toUpperCase();
   const known = Boolean(SYMBOL_TO_ID[sym]);
   const [open, setOpen] = useState(false);
+  const [below, setBelow] = useState(false);
   const [market, setMarket] = useState<MarketRow | null>(null);
   const [loading, setLoading] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
 
   const onEnter = () => {
+    // flip the card below the tag if there isn't room above (near feed top)
+    const r = wrapRef.current?.getBoundingClientRect();
+    setBelow(!!r && r.top < 170);
     setOpen(true);
     if (known && !market && !loading) {
       setLoading(true);
@@ -32,6 +38,7 @@ export function CashTag({ symbol }: { symbol: string }) {
 
   return (
     <span
+      ref={wrapRef}
       className="relative inline-block"
       onMouseEnter={onEnter}
       onMouseLeave={() => setOpen(false)}
@@ -51,7 +58,12 @@ export function CashTag({ symbol }: { symbol: string }) {
         </span>
       )}
       {open && (
-        <span className="absolute bottom-full left-1/2 z-30 mb-1.5 block w-44 -translate-x-1/2 rounded-lg border border-border-strong bg-overlay p-2.5 text-left shadow-2xl">
+        <span
+          className={cn(
+            "absolute left-1/2 z-30 block w-44 -translate-x-1/2 rounded-lg border border-border-strong bg-overlay p-2.5 text-left shadow-2xl",
+            below ? "top-full mt-1.5" : "bottom-full mb-1.5",
+          )}
+        >
           <span className="flex items-center justify-between">
             <span className="text-xs font-semibold text-fg">${sym}</span>
             {known ? (

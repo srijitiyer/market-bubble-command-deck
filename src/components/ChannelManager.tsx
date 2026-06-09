@@ -155,6 +155,9 @@ export function ChannelManager() {
                   <span className="truncate text-xs font-medium text-fg">
                     {c.channel}
                   </span>
+                  <span className="shrink-0 text-[10px] text-faint">
+                    · {PLATFORMS[c.platform].name}
+                  </span>
                   {c.viewers ? (
                     <span className="mono text-[10px] text-faint">
                       {formatNumber(c.viewers)} viewers
