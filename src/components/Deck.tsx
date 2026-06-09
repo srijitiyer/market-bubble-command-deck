@@ -88,6 +88,8 @@ export function Deck() {
     } else {
       for (const s of SEED) addChannel(s.platform, s.channel);
     }
+    // backfill demo history once all channels are in, so the deck opens alive
+    useDeck.getState().seedDemoHistory();
   }, [addChannel, hydrate, channelCount]);
 
   useEffect(() => {

@@ -114,7 +114,10 @@ export function LandingOutro() {
                     "linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.5) 50%, transparent 62%)",
                   backgroundSize: "220% 100%",
                   mixBlendMode: "overlay",
-                  animation: "sweep 1.1s ease-out 0.35s 1",
+                  // "both" keeps the band parked off-canvas after the sweep —
+                  // without it the background-position snaps back to 0 and
+                  // leaves a stuck gray band over part of the wordmark
+                  animation: "sweep 1.1s ease-out 0.35s 1 both",
                 }}
               />
             )}

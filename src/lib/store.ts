@@ -14,7 +14,7 @@ import { extractEntities } from "./connectors/base";
 import { TwitchConnector } from "./connectors/twitch";
 import { KickConnector } from "./connectors/kick";
 import { XConnector } from "./connectors/x";
-import { startDemoStream } from "./connectors/demo";
+import { makeDemoMessage, startDemoStream } from "./connectors/demo";
 import { blip, unlockAudio } from "./sound";
 import { fetchTwitchMeta } from "./twitchMeta";
 import {
@@ -63,6 +63,7 @@ interface DeckState {
   connectAll: () => void;
   disconnectAll: () => void;
   ingest: (msg: ChatMessage) => void;
+  seedDemoHistory: () => void;
   clearMessages: () => void;
   setSearch: (s: string) => void;
   togglePlatformFilter: (p: Platform) => void;
@@ -339,6 +340,36 @@ export const useDeck = create<DeckState>((set, get) => ({
 
   connectAll: () => {
     for (const c of get().channels) get().connectChannel(c.platform, c.channel);
+    get().seedDemoHistory();
+  },
+
+  // Demo mode on an empty deck: backfill a few minutes of believable history so
+  // the room reads as established the moment it opens — feed, stats, leaderboard
+  // and audience all populated — instead of trickling up from zero.
+  seedDemoHistory: () => {
+    const s = get();
+    if (!s.demoMode || s.messages.length > 0 || !s.channels.length) return;
+    const now = Date.now();
+    const span = 4 * 60_000;
+    const count = 90;
+    const backfill: ChatMessage[] = [];
+    for (let i = 0; i < count; i++) {
+      const ch = s.channels[Math.floor(Math.random() * s.channels.length)];
+      const m = makeDemoMessage(ch.platform, ch.channel);
+      m.timestamp = now - span + Math.round((span * (i + Math.random())) / count);
+      backfill.push(m);
+    }
+    backfill.sort((a, b) => a.timestamp - b.timestamp);
+    const totalByPlatform = emptyByPlatform();
+    for (const m of backfill) totalByPlatform[m.platform] += 1;
+    set({
+      messages: backfill,
+      totalMessages: backfill.length,
+      totalByPlatform,
+      recentTimestamps: backfill
+        .map((m) => m.timestamp)
+        .filter((t) => now - t < RATE_WINDOW_MS),
+    });
   },
 
   disconnectAll: () => {

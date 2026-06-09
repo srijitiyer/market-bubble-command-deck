@@ -141,7 +141,7 @@ export function DemoShowcase() {
 
       // 1 — the whole deck
       await spotlight(q("#deck-stage"), 0);
-      await say("Market Bubble", "Every stream, every chat — one command deck.");
+      await say("Market Bubble", "Every stream, every chat, one command deck.");
       await sleep(2700);
 
       // 2 — the broadcast
@@ -153,7 +153,7 @@ export function DemoShowcase() {
       await spotlight(q('[data-tour="chat"]'), 8);
       await say(
         "One unified feed",
-        "Twitch, Kick and X — merged live, with the source labelled on every message.",
+        "Twitch, Kick and X merged live, every message labeled with its source.",
       );
       await sleep(3700);
 
@@ -187,7 +187,7 @@ export function DemoShowcase() {
         'input[aria-label="Broadcast to the shared chat"]',
       ) as HTMLInputElement | null;
       if (composer) {
-        await typeInto(composer, "gm degens — we are SO back");
+        await typeInto(composer, "gm degens, we are SO back");
         await sleep(300);
         composer
           .closest("form")
@@ -209,14 +209,14 @@ export function DemoShowcase() {
 
       // 8 — Polymarket odds
       await spotlight(q('[data-tour="odds"]'), 8);
-      await say("Live odds", "Real Polymarket markets on every take — straight from their API.");
+      await say("Live odds", "Real Polymarket markets on every take, straight from their API.");
       await sleep(3100);
 
       // 9 — Markets section
       await switchTo("markets");
       await spotlight(q('[data-tour="markets"]'), 8, true);
       setDim(0.55);
-      await say("Markets", "A live markets board — real prices, real sparklines, real odds.");
+      await say("Markets", "A live markets board. Real prices, real sparklines, real odds.");
       await sleep(3300);
 
       // 10 — Leaderboard section

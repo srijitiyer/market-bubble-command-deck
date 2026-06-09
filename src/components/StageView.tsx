@@ -34,7 +34,7 @@ export function StageView() {
         </span>
       </section>
 
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         {/* LEFT — stage + intelligence */}
         <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
           {/* hero stream — centered and height-capped so the intelligence strip
@@ -43,7 +43,7 @@ export function StageView() {
             <div
               className="relative mx-auto w-full"
               data-tour="hero"
-              style={{ maxWidth: "calc((100dvh - 360px) * 16 / 9)" }}
+              style={{ maxWidth: "max(440px, calc((100dvh - 360px) * 16 / 9))" }}
             >
               <StreamWatch />
               <div className="pointer-events-none absolute right-2.5 top-2.5">
@@ -74,7 +74,7 @@ export function StageView() {
 
         {/* RIGHT — the merged live chat */}
         <aside
-          className="panel flex w-[clamp(360px,28vw,460px)] shrink-0 flex-col overflow-hidden"
+          className="panel flex h-[440px] w-full shrink-0 flex-col overflow-hidden lg:h-auto lg:w-[clamp(360px,28vw,460px)]"
           data-tour="chat"
         >
           <PanelHeader
