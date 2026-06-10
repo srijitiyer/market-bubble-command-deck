@@ -287,15 +287,17 @@ export function DemoTour() {
       await sleep(2300);
       if (cancelled) return;
 
-      // BEAT 2 — the live vitals
+      // BEAT 2 — the live vitals (cursor sweeps along the numbers; no zoom —
+      // a full-width bar at the top edge can't be framed by a center-zoom)
       mark("stats");
-      showCaption("Live vitals", "The room's pulse, moving in real time");
+      showCaption("Live vitals", "Viewers, chatters, messages, counted live", true);
       const stats = q('[data-tour="stats"]');
       if (stats) {
-        await zoomTo(stats, 1.55);
-        await moveToEl(stats);
-        await sleep(2200);
-        await zoomReset();
+        const r = stats.getBoundingClientRect();
+        await move(r.left + 30, r.top + r.height * 0.6);
+        await sleep(500);
+        await move(r.left + Math.min(r.width * 0.42, 560), r.top + r.height * 0.6);
+        await sleep(1700);
       }
       if (cancelled) return;
 
@@ -330,7 +332,6 @@ export function DemoTour() {
       const aud = q('[data-tour="audience"]');
       await bring(aud);
       deck.setPaused(true);
-      if (aud) await zoomTo(aud, 1.45);
       const dots = aud
         ? [...aud.querySelectorAll("a[href]")].filter((a) =>
             /^[A-Z0-9]$/.test(a.textContent?.trim() || ""),
@@ -338,6 +339,7 @@ export function DemoTour() {
         : [];
       const dot = dots[3] || dots[0];
       if (dot) {
+        await zoomTo(dot, 1.45); // center the action, not the container
         await moveToEl(dot);
         hover(dot);
         await sleep(2600);
@@ -355,13 +357,13 @@ export function DemoTour() {
       await sleep(550);
       deck.setPaused(true);
       await sleep(250);
-      if (chat) await zoomTo(chat, 1.4);
       const chip = chat
         ? [...chat.querySelectorAll("a")]
             .filter((a) => (a.textContent?.trim() || "")[0] === "$")
             .pop()
         : null;
       if (chip) {
+        await zoomTo(chip, 1.4); // center the action, not the container
         await moveToEl(chip);
         hover(chip);
         await sleep(2700);
@@ -378,8 +380,8 @@ export function DemoTour() {
       const composer = q(
         'input[aria-label="Broadcast to the shared chat"]',
       ) as HTMLInputElement | null;
-      if (composer && chat) {
-        await zoomTo(chat, 1.38);
+      if (composer) {
+        await zoomTo(composer, 1.38); // center the action, not the container
         await moveToEl(composer);
         await typeInto(composer, "gm degens, we are SO back");
         await sleep(300);
