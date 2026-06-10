@@ -19,7 +19,7 @@ function ShowReplay() {
     <div className="relative h-full w-full bg-black">
       <iframe
         id="mb-show-embed"
-        src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&mute=1&controls=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&playsinline=1&start=${DEMO_START}&loop=1&playlist=${DEMO_VIDEO_ID}`}
+        src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&mute=1&controls=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&playsinline=1&enablejsapi=1&start=${DEMO_START}&loop=1&playlist=${DEMO_VIDEO_ID}`}
         title="Market Bubble — episode replay"
         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
         allowFullScreen

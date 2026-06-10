@@ -3,25 +3,23 @@
 import { useEffect } from "react";
 import { useDeck } from "@/lib/store";
 
-// The product film. A chaptered, cinematic walkthrough:
+// The product film, v3 — a keynote-style piece. No spotlight boxes, no dimming
+// windows, no overlays on the product, ever:
 //
-//   - The deck is gently inset into a "frame" for the duration of the film,
-//     reserving a black band at the bottom of the screen. ALL narration lives
-//     there as a fixed lower-third (kicker + serif headline), so text can never
-//     overlap content or run off screen.
-//   - A soft spotlight glides between large regions; small features are shown
-//     by their own interactions (hovercards, typing, clicks), never by
-//     shrinking the spotlight onto tiny targets.
-//   - Sections (Command Deck, Markets, Leaderboard) are introduced by serif
-//     chapter cards on an opaque field; the view switches under the card, so
-//     there are no visible swaps or cuts.
+//   - The deck sits full-bright, gently inset in a frame that reserves a black
+//     band at the bottom of the screen. ALL narration lives there as a fixed
+//     lower-third (gold kicker + serif headline).
+//   - Attention is directed by the product itself: the hovercards popping, the
+//     typing, the feed refiltering, the sections switching.
+//   - Full-screen serif chapter cards cut between acts; views switch under the
+//     opaque card, so there are no visible swaps.
+//   - The show embed is driven through YouTube's iframe API (force-play), so
+//     the hero is actually playing instead of showing a pause wall.
 //
-// Runs on Shift+T (or window.__playShowcase()) — no auto-start, so recording
-// is one keypress. The older zoom/cursor tour is preserved at ?tour=legacy
-// (Shift+L).
+// Runs on Shift+T (or window.__playShowcase()) — no auto-start, so a recording
+// is one keypress and hands off. The old zoom tour stays at ?tour=legacy
+// (Shift+L). Telemetry: window.__filmBeat / window.__filmErr.
 
-
-const MOVE = 900;
 const SCALE = 0.9;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -29,7 +27,6 @@ type WinHooks = {
   __tourActive?: boolean;
   __playShowcase?: () => void;
   __mbSetLayout?: (l: Record<string, number>) => void;
-  // film telemetry (debugging/verification): current beat + any crash
   __filmBeat?: string;
   __filmErr?: string;
 };
@@ -39,120 +36,21 @@ export function DemoShowcase() {
   useEffect(() => {
     let cancelled = false;
 
-    // ---- the frame: inset the whole deck, reserving the lower third --------
+    // ---- the frame: inset the deck, reserving the lower third ---------------
     const stage = document.getElementById("deck-stage");
+    const frameOn = () => {
+      if (!stage) return;
+      stage.style.transition = "none";
+      stage.style.transformOrigin = "50% 0";
+      stage.style.transform = `scale(${SCALE})`;
+    };
     const frameOff = () => {
       if (!stage) return;
       stage.style.transform = "";
       stage.style.transformOrigin = "0 0";
     };
 
-    // ---- spotlight: an SVG mask window in a dim field ----------------------
-    // One rAF loop smoothly pursues the (continuously re-measured) target, so
-    // the window stays glued to panels even as the live deck reflows under it.
-    // SVG attributes + no CSS transitions + no shadow blur = cheap paints; DOM
-    // writes are skipped entirely once the window has settled.
-    const SVGNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(SVGNS, "svg");
-    svg.setAttribute("id", "__spot");
-    svg.style.cssText =
-      "position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none;opacity:0;transition:opacity .5s ease;";
-    svg.innerHTML =
-      '<defs><mask id="__spotmask">' +
-      '<rect x="0" y="0" width="100%" height="100%" fill="white"/>' +
-      '<rect id="__hole" x="0" y="0" width="0" height="0" rx="14" fill="black"/>' +
-      "</mask></defs>" +
-      '<rect x="0" y="0" width="100%" height="100%" fill="rgba(5,5,6,0.68)" mask="url(#__spotmask)"/>' +
-      '<rect id="__ring" x="0" y="0" width="0" height="0" rx="14" fill="none" stroke="rgba(233,225,209,0.38)" stroke-width="1"/>';
-    document.body.appendChild(svg);
-    const hole = svg.querySelector("#__hole") as SVGRectElement;
-    const ringEl = svg.querySelector("#__ring") as SVGRectElement;
-
-    let target: { el: Element; pad: number; padTop: number } | null = null;
-    const cur = { x: 0, y: 0, w: 0, h: 0 };
-    let drawn = { x: -1, y: -1, w: -1, h: -1 };
-    let last = 0;
-    let raf = 0;
-    const tick = (now: number) => {
-      raf = requestAnimationFrame(tick);
-      const dt = Math.min(64, now - last || 16);
-      last = now;
-      if (!target) return;
-      const r = target.el.getBoundingClientRect();
-      const goal = {
-        x: r.left - target.pad,
-        y: r.top - target.pad - target.padTop,
-        w: r.width + target.pad * 2,
-        h: r.height + target.pad * 2 + target.padTop,
-      };
-      // smooth pursuit: exponential ease toward the live goal (~1s big moves,
-      // instant micro-corrections when a panel shifts a few px)
-      const k = 1 - Math.exp(-dt / 240);
-      cur.x += (goal.x - cur.x) * k;
-      cur.y += (goal.y - cur.y) * k;
-      cur.w += (goal.w - cur.w) * k;
-      cur.h += (goal.h - cur.h) * k;
-      const settled =
-        Math.abs(goal.x - cur.x) < 0.4 &&
-        Math.abs(goal.y - cur.y) < 0.4 &&
-        Math.abs(goal.w - cur.w) < 0.4 &&
-        Math.abs(goal.h - cur.h) < 0.4;
-      if (settled) {
-        cur.x = goal.x;
-        cur.y = goal.y;
-        cur.w = goal.w;
-        cur.h = goal.h;
-      }
-      // Only touch the DOM when the window actually moved — a same-value
-      // setAttribute still invalidates the full-screen masked layer, and a
-      // 60fps repaint storm of that layer can starve the page.
-      if (
-        Math.abs(cur.x - drawn.x) > 0.05 ||
-        Math.abs(cur.y - drawn.y) > 0.05 ||
-        Math.abs(cur.w - drawn.w) > 0.05 ||
-        Math.abs(cur.h - drawn.h) > 0.05
-      ) {
-        drawn = { ...cur };
-        for (const el of [hole, ringEl]) {
-          el.setAttribute("x", cur.x.toFixed(1));
-          el.setAttribute("y", cur.y.toFixed(1));
-          el.setAttribute("width", Math.max(0, cur.w).toFixed(1));
-          el.setAttribute("height", Math.max(0, cur.h).toFixed(1));
-        }
-      }
-    };
-    raf = requestAnimationFrame(tick);
-
-    const spotlight = async (
-      el: Element | null,
-      pad = 8,
-      instant = false,
-      padTop = 0, // extra headroom so hovercards pop inside the lit window
-    ) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      if (instant || svg.style.opacity === "0") {
-        cur.x = r.left - pad;
-        cur.y = r.top - pad - padTop;
-        cur.w = r.width + pad * 2;
-        cur.h = r.height + pad * 2 + padTop;
-      }
-      target = { el, pad, padTop };
-      svg.style.opacity = "1";
-      await sleep(instant ? 80 : MOVE + 80);
-    };
-    const spotOff = () => {
-      target = null;
-      svg.style.opacity = "0";
-    };
-    // settle a below-fold target into view before lighting it (no-op if visible)
-    const bring = async (el: Element | null) => {
-      if (!el) return;
-      el.scrollIntoView({ block: "nearest" });
-      await sleep(280);
-    };
-
-    // ---- lower-third narration (fixed, in the reserved band) ---------------
+    // ---- lower-third narration (fixed, centered in the reserved band) ------
     const third = document.createElement("div");
     third.id = "__third";
     third.style.cssText =
@@ -176,7 +74,7 @@ export function DemoShowcase() {
       third.style.opacity = "0";
     };
 
-    // ---- chapter cards (opaque field, serif title) --------------------------
+    // ---- full-screen cards (chapters + bookends) ----------------------------
     const card = document.createElement("div");
     card.id = "__chapter";
     card.style.cssText =
@@ -201,10 +99,6 @@ export function DemoShowcase() {
       card.style.opacity = "0";
       await sleep(580);
     };
-
-    // Title / end cards — the film's own bookends. Vanilla DOM (the pearl orb
-    // is a plain gradient), so the film never depends on the React intro/outro
-    // replaying correctly mid-session.
     const lockupCard = (tagline: string) => {
       card.innerHTML =
         '<div style="width:84px;height:84px;border-radius:50%;margin-bottom:6px;' +
@@ -250,6 +144,25 @@ export function DemoShowcase() {
         await sleep(36);
       }
     };
+    const bring = async (el: Element | null) => {
+      if (!el) return;
+      el.scrollIntoView({ block: "nearest" });
+      await sleep(280);
+    };
+    // Drive the show embed through YouTube's iframe API so the hero is always
+    // actually playing (long-lived muted embeds otherwise pause into an ugly
+    // suggestion wall).
+    const forcePlay = () => {
+      const f = document.getElementById("mb-show-embed") as HTMLIFrameElement | null;
+      f?.contentWindow?.postMessage(
+        '{"event":"command","func":"playVideo","args":""}',
+        "*",
+      );
+      f?.contentWindow?.postMessage(
+        '{"event":"command","func":"mute","args":""}',
+        "*",
+      );
+    };
 
     // ---- the film -----------------------------------------------------------
     const mark = (m: string) => {
@@ -259,8 +172,7 @@ export function DemoShowcase() {
       win().__tourActive = true;
       win().__filmErr = "";
 
-      // COLD OPEN — the film's own title card; the deck is staged underneath
-      // (live section, demo traffic, framed) so the reveal lands ready-made.
+      // COLD OPEN — title card; the deck is staged underneath
       mark("title");
       lockupCard("Every stream · One chat");
       card.style.opacity = "1";
@@ -271,66 +183,57 @@ export function DemoShowcase() {
       d.setViewMode("stage");
       d.setHostFilter("all");
       if (!d.demoMode) d.toggleDemo();
-      if (stage) {
-        stage.style.transition = "none";
-        stage.style.transformOrigin = "50% 0";
-        stage.style.transform = `scale(${SCALE})`;
-      }
-      const embed = document.getElementById("mb-show-embed") as HTMLIFrameElement | null;
-      if (embed) embed.src = embed.src; // reload -> fresh muted autoplay, no pause wall
+      frameOn();
+      forcePlay();
       await sleep(2400);
       if (cancelled) return;
       card.style.opacity = "0";
       await sleep(580);
       if (cancelled) return;
 
-      // ACT I — the live room
+      // ACT I — the live room (full-bright; the product is the visual)
       mark("act1:deck");
-      await spotlight(q("#deck-stage"), 0);
+      forcePlay();
       await say("Market Bubble", "Every stream and every chat, on one screen.");
-      await sleep(3000);
+      await sleep(3200);
       if (cancelled) return;
 
       mark("act1:hero");
-      await spotlight(q('[data-tour="hero"]'));
+      forcePlay();
       await say("The broadcast", "The show plays natively inside the deck.");
-      await sleep(2900);
+      await sleep(3000);
       if (cancelled) return;
 
       mark("act1:feed");
-      await spotlight(q('[data-tour="chat"]'));
       await say("One feed", "Twitch, Kick and X merged in real time. Every message labeled.");
       await sleep(3600);
       if (cancelled) return;
 
       mark("act1:audience");
       await bring(q('[data-tour="audience"]'));
-      await spotlight(q('[data-tour="audience"]'), 8, false, 150);
       await say("Know the room", "Hover any viewer to see where they watch from.");
       const dots = [
         ...document.querySelectorAll('[data-tour="audience"] a[href]'),
       ].filter((a) => /^[A-Z0-9]$/.test(a.textContent?.trim() || ""));
       const dot = dots[3] || dots[0];
       hover(dot);
-      await sleep(3000);
+      await sleep(3200);
       unhover(dot);
       if (cancelled) return;
 
       mark("act1:cashtag");
       useDeck.getState().broadcast("eyeing $SOL here, this could send 👀");
-      await sleep(500);
-      await spotlight(q('[data-tour="chat"]'));
+      await sleep(600);
       await say("Crypto native", "Cashtags pull live prices straight into chat.");
       const chip = [...document.querySelectorAll('[data-tour="chat"] a')]
         .filter((a) => (a.textContent?.trim() || "")[0] === "$")
         .pop();
       hover(chip);
-      await sleep(3200);
+      await sleep(3300);
       unhover(chip);
       if (cancelled) return;
 
       mark("act1:composer");
-      await spotlight(q('[data-tour="composer"]'), 10);
       await say("One shared chat", "Type once and the whole room sees it.");
       const composer = q(
         'input[aria-label="Broadcast to the shared chat"]',
@@ -342,27 +245,24 @@ export function DemoShowcase() {
           .closest("form")
           ?.querySelector<HTMLButtonElement>('button[type="submit"]')
           ?.click();
-        await sleep(450);
-        await spotlight(q('[data-tour="chat"]')); // watch it land in the room
-        await sleep(1500);
+        await sleep(1800); // watch it land in the room
       }
       if (cancelled) return;
 
       mark("act1:hosts");
-      await spotlight(q('[data-tour="hero"]'));
       await say("Follow the hosts", "One click filters everything to Ansem or Banks.");
       const hostBtn = (label: string) =>
         [...document.querySelectorAll('[data-tour="hostswitch"] button')].find(
           (b) => b.textContent?.trim() === label,
         ) as HTMLButtonElement | undefined;
+      await sleep(500);
       hostBtn("Ansem")?.click();
-      await sleep(3000);
+      await sleep(2800);
       hostBtn("Both")?.click();
       if (cancelled) return;
 
       mark("act1:odds");
       await bring(q('[data-tour="odds"]'));
-      await spotlight(q('[data-tour="odds"]'));
       await say("Live odds", "Real Polymarket markets, priced in real time.");
       await sleep(3100);
       if (cancelled) return;
@@ -373,7 +273,6 @@ export function DemoShowcase() {
         useDeck.getState().setViewMode("deck");
       });
       if (cancelled) return;
-      await spotlight(q("#deck-stage"), 0, true);
       await say("Built for operators", "A full multi-panel deck. Drag anything to resize.");
       const setL = win().__mbSetLayout;
       if (setL) {
@@ -400,7 +299,6 @@ export function DemoShowcase() {
         useDeck.getState().setSection("markets");
       });
       if (cancelled) return;
-      await spotlight(q('[data-tour="markets"]'), 6, true);
       await say("The tape", "Live prices, sparklines and market caps from CoinGecko.");
       await sleep(3400);
       if (cancelled) return;
@@ -411,18 +309,15 @@ export function DemoShowcase() {
         useDeck.getState().setSection("leaders");
       });
       if (cancelled) return;
-      await spotlight(q('[data-tour="leaders"]'), 6, true);
       await say("Who moves the room", "A live ranking built from the merged feed.");
       await sleep(3400);
       if (cancelled) return;
 
+      // CLOSE — end card; everything restores underneath it
       mark("close");
-      // CLOSE — the film's own end card; everything restores underneath it,
-      // and the recording ends held on the brand lockup.
       lockupCard("Every stream · One chat");
       card.style.opacity = "1";
       await sleep(620);
-      spotOff();
       hush();
       frameOff();
       const dd = useDeck.getState();
@@ -447,8 +342,6 @@ export function DemoShowcase() {
       cancelled = false;
       void safeRun();
     };
-    // No auto-start: the film runs on Shift+T (its own title card opens it),
-    // so a recording is one keypress and hands off.
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       const typing =
@@ -463,9 +356,7 @@ export function DemoShowcase() {
 
     return () => {
       cancelled = true;
-      cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
-      svg.remove();
       third.remove();
       card.remove();
       frameOff();
