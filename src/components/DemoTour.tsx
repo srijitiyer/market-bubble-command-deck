@@ -397,6 +397,9 @@ export function DemoTour() {
       // BEAT 8 — follow the hosts (no zoom: switch + refilter both visible)
       mark("hosts");
       showCaption("Follow the hosts", "One click filters the room to a host");
+      // earlier beats scrolled the column down — bring the switch itself back
+      // into view ('nearest' on a small element guarantees full visibility)
+      await bring(q('[data-tour="hostswitch"]'));
       const hostBtn = (label: string) =>
         [...document.querySelectorAll('[data-tour="hostswitch"] button')].find(
           (b) => b.textContent?.trim() === label,
