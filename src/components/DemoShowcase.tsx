@@ -62,13 +62,13 @@ export function DemoShowcase() {
       '<rect x="0" y="0" width="100%" height="100%" fill="white"/>' +
       '<rect id="__hole" x="0" y="0" width="0" height="0" rx="14" fill="black"/>' +
       "</mask></defs>" +
-      '<rect x="0" y="0" width="100%" height="100%" fill="rgba(5,5,6,0.58)" mask="url(#__spotmask)"/>' +
+      '<rect x="0" y="0" width="100%" height="100%" fill="rgba(5,5,6,0.68)" mask="url(#__spotmask)"/>' +
       '<rect id="__ring" x="0" y="0" width="0" height="0" rx="14" fill="none" stroke="rgba(233,225,209,0.38)" stroke-width="1"/>';
     document.body.appendChild(svg);
     const hole = svg.querySelector("#__hole") as SVGRectElement;
     const ringEl = svg.querySelector("#__ring") as SVGRectElement;
 
-    let target: { el: Element; pad: number } | null = null;
+    let target: { el: Element; pad: number; padTop: number } | null = null;
     const cur = { x: 0, y: 0, w: 0, h: 0 };
     let drawn = { x: -1, y: -1, w: -1, h: -1 };
     let last = 0;
@@ -81,9 +81,9 @@ export function DemoShowcase() {
       const r = target.el.getBoundingClientRect();
       const goal = {
         x: r.left - target.pad,
-        y: r.top - target.pad,
+        y: r.top - target.pad - target.padTop,
         w: r.width + target.pad * 2,
-        h: r.height + target.pad * 2,
+        h: r.height + target.pad * 2 + target.padTop,
       };
       // smooth pursuit: exponential ease toward the live goal (~1s big moves,
       // instant micro-corrections when a panel shifts a few px)
@@ -123,16 +123,21 @@ export function DemoShowcase() {
     };
     raf = requestAnimationFrame(tick);
 
-    const spotlight = async (el: Element | null, pad = 8, instant = false) => {
+    const spotlight = async (
+      el: Element | null,
+      pad = 8,
+      instant = false,
+      padTop = 0, // extra headroom so hovercards pop inside the lit window
+    ) => {
       if (!el) return;
       const r = el.getBoundingClientRect();
       if (instant || svg.style.opacity === "0") {
         cur.x = r.left - pad;
-        cur.y = r.top - pad;
+        cur.y = r.top - pad - padTop;
         cur.w = r.width + pad * 2;
-        cur.h = r.height + pad * 2;
+        cur.h = r.height + pad * 2 + padTop;
       }
-      target = { el, pad };
+      target = { el, pad, padTop };
       svg.style.opacity = "1";
       await sleep(instant ? 80 : MOVE + 80);
     };
@@ -271,6 +276,8 @@ export function DemoShowcase() {
         stage.style.transformOrigin = "50% 0";
         stage.style.transform = `scale(${SCALE})`;
       }
+      const embed = document.getElementById("mb-show-embed") as HTMLIFrameElement | null;
+      if (embed) embed.src = embed.src; // reload -> fresh muted autoplay, no pause wall
       await sleep(2400);
       if (cancelled) return;
       card.style.opacity = "0";
@@ -298,7 +305,7 @@ export function DemoShowcase() {
 
       mark("act1:audience");
       await bring(q('[data-tour="audience"]'));
-      await spotlight(q('[data-tour="audience"]'));
+      await spotlight(q('[data-tour="audience"]'), 8, false, 150);
       await say("Know the room", "Hover any viewer to see where they watch from.");
       const dots = [
         ...document.querySelectorAll('[data-tour="audience"] a[href]'),
@@ -335,12 +342,14 @@ export function DemoShowcase() {
           .closest("form")
           ?.querySelector<HTMLButtonElement>('button[type="submit"]')
           ?.click();
+        await sleep(450);
+        await spotlight(q('[data-tour="chat"]')); // watch it land in the room
+        await sleep(1500);
       }
-      await sleep(1900);
       if (cancelled) return;
 
       mark("act1:hosts");
-      await spotlight(q('[data-tour="row"]'), 4);
+      await spotlight(q('[data-tour="hero"]'));
       await say("Follow the hosts", "One click filters everything to Ansem or Banks.");
       const hostBtn = (label: string) =>
         [...document.querySelectorAll('[data-tour="hostswitch"] button')].find(
