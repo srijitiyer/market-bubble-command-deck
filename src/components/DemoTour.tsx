@@ -3,22 +3,46 @@
 import { useEffect } from "react";
 import { useDeck } from "@/lib/store";
 
-// A self-playing cinematic tour of the deck for recording the demo video.
-// Drives a glowing cursor, auto-zooms into each beat (Screen-Studio style),
-// and shows styled caption cards. Trigger with ?tour=legacy, Shift+L, or
-// window.__startTour().
+// The demo film — a cursor-driven cinematic tour. A glowing cursor works the
+// real UI (hovers, clicks, types, switches tabs) while caption cards pop beside
+// it and the camera glides into whatever it's working on. Full-bleed: no frames,
+// no dimming, no overlay chrome — the live product is the whole picture.
+//
+// Motion grammar (from Screen Studio / Cap's rendering engine):
+//   - cursor travel duration scales with distance, easeInOutCubic, slight tilt
+//     toward the motion, a 260ms micro-hold before every click
+//   - zoom-ins are snappy (950ms, easeOutExpo-ish), zoom-outs are softer and
+//     ~12% slower — and the transition is asserted per-move, never global
+//   - captions pop with a small overshoot and exit plain and fast
+//
+// Trigger: Shift+T (or window.__startTour()). No auto-start — a recording is
+// one keypress, hands off. Telemetry: window.__filmBeat / window.__filmErr.
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-// Smooth ease-in-out so the cursor accelerates and settles gently (not "sharp").
-const EASE = "cubic-bezier(0.45, 0, 0.25, 1)";
-const CUR_MS = 780;
-const ZOOM_MS = 980;
+
+const CURSOR_EASE = "cubic-bezier(0.65, 0, 0.35, 1)"; // hand-like accel/decel
+const ZOOM_IN_MS = 950;
+const ZOOM_OUT_MS = 1080;
+const ZOOM_IN_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+const ZOOM_OUT_EASE = "cubic-bezier(0.45, 0, 0.15, 1)";
+const POP = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+
+type WinHooks = {
+  __tourActive?: boolean;
+  __startTour?: () => void;
+  __playIntro?: () => void;
+  __playOutro?: () => void;
+  __mbSetLayout?: (l: Record<string, number>) => void;
+  __filmBeat?: string;
+  __filmErr?: string;
+};
+const win = () => window as unknown as Window & WinHooks;
 
 export function DemoTour() {
   useEffect(() => {
     let cancelled = false;
 
-    // ---- cursor -----------------------------------------------------------
+    // ---- cursor -------------------------------------------------------------
     const buildCursor = () => {
       document.getElementById("__tcur")?.remove();
       const c = document.createElement("div");
@@ -27,7 +51,7 @@ export function DemoTour() {
       const sy = window.innerHeight * 0.46;
       c.style.cssText =
         "position:fixed;left:0;top:0;width:26px;height:26px;z-index:100002;pointer-events:none;" +
-        `transition:transform ${CUR_MS}ms ${EASE},opacity .35s;transform:translate(${sx}px,${sy}px);` +
+        `transform:translate(${sx}px,${sy}px) rotate(0deg) scale(1);opacity:0;transition:opacity .35s;` +
         "filter:drop-shadow(0 0 6px rgba(233,225,209,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.6))";
       c.innerHTML =
         '<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M5 3 L5 20 L9.5 15.2 L12.8 22 L15.6 20.7 L12.3 14 L19 14 Z" fill="#fff" stroke="#0a0a0a" stroke-width="1.4" stroke-linejoin="round"/></svg>';
@@ -36,74 +60,99 @@ export function DemoTour() {
       document.body.appendChild(c);
       return c;
     };
-    let cur: HTMLElement;
-    const cx = () => parseFloat(cur.dataset.x || "0");
-    const cy = () => parseFloat(cur.dataset.y || "0");
-    const move = (x: number, y: number) => {
+    let cur: HTMLElement | null = null;
+    const cx = () => parseFloat(cur?.dataset.x || "0");
+    const cy = () => parseFloat(cur?.dataset.y || "0");
+    const setCursor = (x: number, y: number, ms: number, tiltRad = 0, scale = 1) => {
+      if (!cur) return;
+      cur.style.transition =
+        ms > 0 ? `transform ${ms}ms ${CURSOR_EASE}, opacity .35s` : "opacity .35s";
+      cur.style.transform = `translate(${x}px,${y}px) rotate(${((tiltRad * 180) / Math.PI).toFixed(1)}deg) scale(${scale})`;
       cur.dataset.x = String(x);
       cur.dataset.y = String(y);
-      cur.style.transform = `translate(${x}px,${y}px)`;
+    };
+    // distance-based travel: ~350ms for short hops, capped at 1100ms
+    const move = async (x: number, y: number) => {
+      const dx = x - cx();
+      const dy = y - cy();
+      const dist = Math.hypot(dx, dy);
+      if (dist < 2) return;
+      const dur = Math.min(1100, Math.max(320, 200 + 0.55 * dist));
+      const tilt = Math.max(-0.15, Math.min(0.15, dx / 900));
+      setCursor(x, y, dur, tilt);
       placeCaption(x, y);
-      return sleep(CUR_MS + 40);
-    };
-    const ripple = () => {
-      const r = document.createElement("div");
-      r.style.cssText =
-        `position:fixed;left:${cx()}px;top:${cy()}px;width:14px;height:14px;z-index:100001;` +
-        "border-radius:999px;border:2px solid rgba(233,225,209,.9);pointer-events:none;" +
-        "transform:translate(-2px,-2px) scale(1);opacity:.9;transition:transform .5s ease-out,opacity .5s ease-out";
-      document.body.appendChild(r);
-      requestAnimationFrame(() => {
-        r.style.transform = "translate(-2px,-2px) scale(4)";
-        r.style.opacity = "0";
-      });
-      setTimeout(() => r.remove(), 520);
-    };
-
-    // ---- zoom stage -------------------------------------------------------
-    const stage = document.getElementById("deck-stage");
-    let S = 1,
-      TX = 0,
-      TY = 0;
-    if (stage) stage.style.transition = `transform ${ZOOM_MS}ms ${EASE}`;
-    const applyZoom = () => {
-      if (stage) stage.style.transform = `translate(${TX}px,${TY}px) scale(${S})`;
-    };
-    const zoomTo = async (el: Element | null | undefined, scale = 1.6) => {
-      if (!el || !stage) return;
-      const r = el.getBoundingClientRect();
-      // element center in *untransformed* stage space
-      const ux = (r.left + r.width / 2 - TX) / S;
-      const uy = (r.top + r.height / 2 - TY) / S;
-      S = scale;
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      // Clamp the pan so the (top-left-anchored) stage always fully covers the
-      // viewport — otherwise zooming into an edge element reveals black borders.
-      TX = Math.min(0, Math.max(W - S * W, W / 2 - ux * S));
-      TY = Math.min(0, Math.max(H - S * H, H / 2 - uy * S));
-      applyZoom();
-      await sleep(ZOOM_MS + 60);
-    };
-    const zoomReset = async () => {
-      S = 1;
-      TX = 0;
-      TY = 0;
-      applyZoom();
-      await sleep(ZOOM_MS + 60);
+      await sleep(dur + 40);
+      setCursor(x, y, 180, 0); // settle the tilt
+      await sleep(60);
     };
     const moveToEl = async (el: Element | null | undefined) => {
       if (!el) return;
       const r = el.getBoundingClientRect();
       await move(r.left + r.width / 2 - 8, r.top + r.height / 2 - 5);
     };
+    const ripple = () => {
+      const r = document.createElement("div");
+      r.style.cssText =
+        `position:fixed;left:${cx()}px;top:${cy()}px;width:14px;height:14px;z-index:100001;` +
+        "border-radius:999px;border:2px solid rgba(233,225,209,.9);pointer-events:none;" +
+        "transform:translate(-2px,-2px) scale(1);opacity:.85;transition:transform .52s ease-out,opacity .52s ease-out";
+      document.body.appendChild(r);
+      requestAnimationFrame(() => {
+        r.style.transform = "translate(-2px,-2px) scale(5)";
+        r.style.opacity = "0";
+      });
+      setTimeout(() => r.remove(), 560);
+    };
+    // micro-hold, press (cursor dips), ripple, click, release
+    const clickEl = async (el: Element | null | undefined) => {
+      if (!el) return;
+      await moveToEl(el);
+      await sleep(260);
+      setCursor(cx(), cy(), 110, 0, 0.88);
+      ripple();
+      await sleep(110);
+      (el as HTMLElement).click();
+      setCursor(cx(), cy(), 200, 0, 1);
+      await sleep(160);
+    };
 
-    // ---- caption card (pops up next to the cursor and travels with it) ----
-    const POP = "cubic-bezier(0.34, 1.56, 0.64, 1)"; // slight overshoot = "pop"
+    // ---- camera (CSS transform zoom on the stage) ----------------------------
+    const stage = document.getElementById("deck-stage");
+    let S = 1,
+      TX = 0,
+      TY = 0;
+    const applyZoom = (ms: number, ease: string) => {
+      if (!stage) return;
+      stage.style.transition = `transform ${ms}ms ${ease}`;
+      stage.style.transformOrigin = "0 0";
+      stage.style.transform = `translate(${TX}px,${TY}px) scale(${S})`;
+    };
+    const zoomTo = async (el: Element | null | undefined, scale = 1.5) => {
+      if (!el || !stage) return;
+      const r = el.getBoundingClientRect();
+      const ux = (r.left + r.width / 2 - TX) / S;
+      const uy = (r.top + r.height / 2 - TY) / S;
+      S = scale;
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      // clamp the pan so the stage always covers the viewport (no black edges)
+      TX = Math.min(0, Math.max(W - S * W, W / 2 - ux * S));
+      TY = Math.min(0, Math.max(H - S * H, H / 2 - uy * S));
+      applyZoom(ZOOM_IN_MS, ZOOM_IN_EASE);
+      await sleep(ZOOM_IN_MS + 80);
+    };
+    const zoomReset = async () => {
+      if (S === 1 && TX === 0 && TY === 0) return;
+      S = 1;
+      TX = 0;
+      TY = 0;
+      applyZoom(ZOOM_OUT_MS, ZOOM_OUT_EASE);
+      await sleep(ZOOM_OUT_MS + 80);
+    };
+
+    // ---- caption card (pops beside the cursor, travels with it) -------------
     let capEl: HTMLElement | null = null;
-    let capBelow = false; // place the card below the cursor (clears hovercards)
-    // Anchor the card next to the cursor tip, flipping/clamping so it always
-    // stays fully on-screen near the action.
+    let capBelow = false;
     const placeCaption = (x: number, y: number) => {
       if (!capEl) return;
       const W = window.innerWidth;
@@ -129,8 +178,8 @@ export function DemoTour() {
           "display:flex;align-items:center;gap:11px;padding:11px 17px 11px 13px;border-radius:13px;" +
           "background:linear-gradient(180deg,rgba(24,25,32,.97),rgba(15,16,21,.97));" +
           "border:1px solid rgba(233,225,209,.22);box-shadow:0 14px 44px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);" +
-          "opacity:0;transform:translateY(8px) scale(.94);pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;" +
-          `transition:left .8s ${EASE},top .8s ${EASE},opacity .3s ease,transform .42s ${POP}`;
+          "opacity:0;transform:translateY(8px) scale(.95);pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;" +
+          `transition:left .8s ${CURSOR_EASE},top .8s ${CURSOR_EASE},opacity .3s ease,transform .32s ${POP}`;
         document.body.appendChild(capEl);
       }
       capEl.innerHTML =
@@ -139,7 +188,6 @@ export function DemoTour() {
         `<span style="font:700 9px/1 ui-sans-serif,system-ui;letter-spacing:.16em;text-transform:uppercase;color:#cabba0">${kicker}</span>` +
         `<span style="font:600 16px/1.15 ui-sans-serif,system-ui;letter-spacing:-.01em;color:#f3f4f8">${text}</span>` +
         "</span>";
-      // place at the cursor without gliding (it's still invisible), then pop in
       const prev = capEl.style.transition;
       capEl.style.transition = "none";
       placeCaption(cx(), cy());
@@ -154,11 +202,14 @@ export function DemoTour() {
     };
     const hideCaption = () => {
       if (capEl) {
+        capEl.style.transition = "opacity .18s ease, transform .18s ease";
         capEl.style.opacity = "0";
-        capEl.style.transform = "translateY(8px) scale(.94)";
+        capEl.style.transform = "translateY(6px) scale(.97)";
       }
     };
 
+    // ---- interaction helpers -------------------------------------------------
+    const q = (s: string) => document.querySelector(s);
     const fire = (el: Element | null | undefined, t: string[]) =>
       el && t.forEach((n) => el.dispatchEvent(new MouseEvent(n, { bubbles: true })));
     const hover = (el?: Element | null) =>
@@ -175,95 +226,121 @@ export function DemoTour() {
         if (cancelled) return;
         setter.call(input, text.slice(0, i));
         input.dispatchEvent(new Event("input", { bubbles: true }));
-        // Keep the caret (and the rightmost text) in view, like a real input.
         try {
           input.setSelectionRange(i, i);
           input.scrollLeft = input.scrollWidth;
         } catch {
-          /* some input types disallow selection */
+          /* ignore */
         }
         await sleep(step);
       }
     };
+    const bring = async (el: Element | null | undefined) => {
+      if (!el) return;
+      el.scrollIntoView({ block: "nearest" });
+      await sleep(300);
+    };
+    // keep the show embed actually playing (YouTube pauses idle muted embeds)
+    const forcePlay = () => {
+      const f = document.getElementById("mb-show-embed") as HTMLIFrameElement | null;
+      f?.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', "*");
+      f?.contentWindow?.postMessage('{"event":"command","func":"mute","args":""}', "*");
+    };
+    const waitFor = async (sel: string, tries = 20) => {
+      for (let i = 0; i < tries; i++) {
+        const el = q(sel);
+        if (el) return el;
+        await sleep(150);
+      }
+      return null;
+    };
 
-    // ---- choreography -----------------------------------------------------
-    const run = async (skipIntro = false) => {
-      if (!stage) return;
+    // ---- the film -------------------------------------------------------------
+    const mark = (m: string) => {
+      win().__filmBeat = m;
+    };
+    const run = async () => {
+      win().__tourActive = true;
+      win().__filmErr = "";
       const deck = useDeck.getState();
-
-      // Make sure we open on the broadcast Stage with live traffic flowing.
-      (window as unknown as { __tourActive?: boolean }).__tourActive = true;
       deck.setSection("live");
       deck.setViewMode("stage");
+      deck.setHostFilter("all");
       if (!deck.demoMode) deck.toggleDemo();
+      forcePlay();
 
-      // INTRO — replay the cinematic cold-open so it's part of every recording.
-      // On ?tour=1 the page-load intro already played, so we skip the replay.
-      if (!skipIntro) {
-        const playIntro = (window as unknown as { __playIntro?: () => void })
-          .__playIntro;
-        if (playIntro) {
-          playIntro();
-          await sleep(3600);
-        }
-        if (cancelled) return;
+      // INTRO — the cinematic cold-open (glyphs converge into the orb)
+      mark("intro");
+      if (win().__playIntro) {
+        win().__playIntro!();
+        await sleep(3750);
       }
+      if (cancelled) return;
       cur = buildCursor();
-
-      const q = (s: string) => document.querySelector<HTMLElement>(s);
-      const bring = async (el: Element | null | undefined) => {
-        if (!el) return;
-        el.scrollIntoView({ block: "center" });
-        await sleep(420);
-      };
+      cur.style.opacity = "1";
+      forcePlay();
 
       // BEAT 1 — hero wide
-      showCaption("Market Bubble", "Twitch · Kick · X — one live deck");
-      await move(window.innerWidth * 0.5, window.innerHeight * 0.5);
-      await sleep(2200);
+      mark("hero");
+      showCaption("Market Bubble", "Twitch · Kick · X · one live deck");
+      await move(window.innerWidth * 0.5, window.innerHeight * 0.52);
+      await sleep(2300);
       if (cancelled) return;
 
-      // BEAT 2 — the live broadcast, native in the deck
-      showCaption("Watch live", "The show, playing right in the deck");
+      // BEAT 2 — the live vitals
+      mark("stats");
+      showCaption("Live vitals", "The room's pulse, moving in real time");
+      const stats = q('[data-tour="stats"]');
+      if (stats) {
+        await zoomTo(stats, 1.55);
+        await moveToEl(stats);
+        await sleep(2200);
+        await zoomReset();
+      }
+      if (cancelled) return;
+
+      // BEAT 3 — the broadcast
+      mark("broadcast");
+      forcePlay();
+      showCaption("Watch live", "The show plays right in the deck");
       const hero = q('[data-tour="hero"]');
       if (hero) {
         await zoomTo(hero, 1.35);
         await moveToEl(hero);
-        await sleep(2300);
+        await sleep(2400);
         await zoomReset();
       }
-      await sleep(200);
       if (cancelled) return;
 
-      // BEAT 3 — the merged real-time feed (our edge: actually live, labeled)
+      // BEAT 4 — the merged feed
+      mark("feed");
       showCaption("One merged feed", "Every chat, live and source-labeled");
       const chat = q('[data-tour="chat"]');
       if (chat) {
         await zoomTo(chat, 1.32);
         await moveToEl(chat);
-        await sleep(2600);
+        await sleep(2700);
         await zoomReset();
       }
-      await sleep(200);
       if (cancelled) return;
 
-      // BEAT 4 — hover a viewer → see their platform (the C-suite ask).
-      // Zoom the whole audience panel (gentle) and point at one dot — never
-      // zoom into the tiny dot itself (that crops to a confusing close-up).
+      // BEAT 5 — hover a viewer → their platform
+      mark("audience");
       showCaption("Live audience", "Hover any viewer → see their platform", true);
       const aud = q('[data-tour="audience"]');
       await bring(aud);
       deck.setPaused(true);
       if (aud) await zoomTo(aud, 1.45);
-      const dot = aud
-        ? [...aud.querySelectorAll("a[href]")].find((a) =>
+      const dots = aud
+        ? [...aud.querySelectorAll("a[href]")].filter((a) =>
             /^[A-Z0-9]$/.test(a.textContent?.trim() || ""),
           )
-        : null;
+        : [];
+      const dot = dots[3] || dots[0];
       if (dot) {
         await moveToEl(dot);
         hover(dot);
-        await sleep(2500);
+        await sleep(2600);
         unhover(dot);
       }
       await zoomReset();
@@ -271,10 +348,11 @@ export function DemoTour() {
       await sleep(250);
       if (cancelled) return;
 
-      // BEAT 5 — cashtag → live price card (zoom the feed, point at the chip)
+      // BEAT 6 — cashtag → live price
+      mark("cashtag");
       showCaption("Crypto-native", "Cashtags → live price, right in chat", true);
       deck.broadcast("eyeing $SOL here, this could send 👀");
-      await sleep(450);
+      await sleep(550);
       deck.setPaused(true);
       await sleep(250);
       if (chat) await zoomTo(chat, 1.4);
@@ -286,150 +364,188 @@ export function DemoTour() {
       if (chip) {
         await moveToEl(chip);
         hover(chip);
-        await sleep(2600);
+        await sleep(2700);
+        unhover(chip);
       }
       await zoomReset();
       deck.setPaused(false);
       await sleep(250);
       if (cancelled) return;
 
-      // BEAT 6 — host switch (Ansem / Banks). No zoom: the switch sits at the
-      // top-right of the stream and the payoff is the feed re-filtering on the
-      // right — keep the whole layout in frame so both are visible.
-      showCaption("Filter by host", "Follow Ansem or Banks across every platform");
-      hero?.scrollIntoView({ block: "start" });
-      await sleep(450);
-      const hs = q('[data-tour="hostswitch"]');
-      if (hs) {
-        const btn = (label: string) =>
-          [...hs.querySelectorAll("button")].find(
-            (b) => b.textContent?.trim() === label,
-          );
-        const ansem = btn("Ansem");
-        if (ansem) {
-          await moveToEl(ansem);
-          ripple();
-          ansem.click();
-          await sleep(2400);
-        }
-        btn("Both")?.click();
-      }
-      await sleep(300);
-      if (cancelled) return;
-
-      // BEAT 7 — live Polymarket odds (on-brand differentiator)
-      showCaption("Live odds · Polymarket", "Markets on every take they make");
-      const odds = q('[data-tour="odds"]');
-      await bring(odds);
-      if (odds) {
-        await zoomTo(odds, 1.5);
-        await moveToEl(odds);
-        await sleep(2500);
-        await zoomReset();
-      }
-      await sleep(200);
-      if (cancelled) return;
-
-      // BEAT 8 — one shared chat (the kill-shot): zoom the feed so the typed
-      // broadcast is visible landing in the room.
-      showCaption("The kill-shot", "Type once → one shared chat");
+      // BEAT 7 — one shared chat
+      mark("composer");
+      showCaption("One shared chat", "Type once → the whole room sees it");
       const composer = q(
         'input[aria-label="Broadcast to the shared chat"]',
       ) as HTMLInputElement | null;
       if (composer && chat) {
         await zoomTo(chat, 1.38);
         await moveToEl(composer);
-        await typeInto(composer, "gm degens — we are SO back, ape $BUBBLE");
-        await sleep(200);
-        const btn = composer
+        await typeInto(composer, "gm degens, we are SO back");
+        await sleep(300);
+        const send = composer
           .closest("form")
           ?.querySelector<HTMLButtonElement>('button[type="submit"]');
-        await moveToEl(btn);
-        ripple();
-        btn?.click();
-        await sleep(1500);
+        await clickEl(send);
+        await sleep(1500); // watch it land in the room
         await zoomReset();
-        await sleep(700);
       }
       if (cancelled) return;
 
-      // BEAT 9 — reveal the full power-user Deck (+ a resize flourish)
-      showCaption("Command deck", "Or go full command deck — resize anything");
-      deck.setViewMode("deck");
-      await sleep(900); // let the panel group mount
-      const setL = (
-        window as unknown as { __mbSetLayout?: (l: Record<string, number>) => void }
-      ).__mbSetLayout;
-      const sep = document.querySelectorAll("[data-separator]")[1];
-      if (setL && sep) {
+      // BEAT 8 — follow the hosts (no zoom: switch + refilter both visible)
+      mark("hosts");
+      showCaption("Follow the hosts", "One click filters the room to a host");
+      const hostBtn = (label: string) =>
+        [...document.querySelectorAll('[data-tour="hostswitch"] button')].find(
+          (b) => b.textContent?.trim() === label,
+        );
+      await clickEl(hostBtn("Ansem"));
+      await sleep(2300);
+      await clickEl(hostBtn("Both"));
+      if (cancelled) return;
+
+      // BEAT 9 — live Polymarket odds
+      mark("odds");
+      showCaption("Live odds · Polymarket", "Real markets on every take");
+      const odds = q('[data-tour="odds"]');
+      await bring(odds);
+      if (odds) {
+        await zoomTo(odds, 1.4);
+        await moveToEl(odds);
+        await sleep(2500);
+        await zoomReset();
+      }
+      if (cancelled) return;
+
+      // BEAT 10 — the command deck (cursor flips the real toggle, then resizes)
+      mark("deckview");
+      showCaption("Command deck", "Resize anything · built for operators");
+      await clickEl(q('[data-tour="toggle-deck"]'));
+      const sep = await waitFor("[data-separator]");
+      const seps = document.querySelectorAll("[data-separator]");
+      const handle = seps[1] || sep;
+      const setL = win().__mbSetLayout;
+      if (handle && setL) {
+        setL({ left: 17, center: 53, right: 30 }); // canonical start
+        await sleep(350);
+        await moveToEl(handle);
         const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-        cur.style.transition = "none";
+        cur!.style.transition = "opacity .35s"; // cursor tracks the handle live
         const track = () => {
-          const r = sep.getBoundingClientRect();
-          const hx = r.left + r.width / 2 - 8;
-          const hy = r.top + r.height / 2 - 5;
-          cur.style.transform = `translate(${hx}px,${hy}px)`;
-          cur.dataset.x = String(hx);
-          cur.dataset.y = String(hy);
-          placeCaption(hx, hy);
+          const r = handle.getBoundingClientRect();
+          setCursor(r.left + r.width / 2 - 8, r.top + r.height / 2 - 5, 0);
         };
-        const steps = 24;
+        const steps = 22;
         for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
           setL({ left: 17, center: lerp(53, 45, i / steps), right: lerp(30, 38, i / steps) });
           track();
-          await sleep(34);
+          await sleep(32);
         }
-        await sleep(450);
+        await sleep(420);
         for (let i = 1; i <= steps; i++) {
           if (cancelled) return;
           setL({ left: 17, center: lerp(45, 53, i / steps), right: lerp(38, 30, i / steps) });
           track();
-          await sleep(34);
+          await sleep(32);
         }
-        cur.style.transition = `transform ${CUR_MS}ms ${EASE}`;
       }
-      await sleep(500);
+      await sleep(800);
       if (cancelled) return;
 
-      // SIGN-OFF — straight into the cinematic outro (its own wordmark IS the
-      // sign-off). Going direct from the deck reveal under the opaque outro veil
-      // avoids a black re-mounting video frame. Make sure nothing's paused.
-      deck.setPaused(false);
+      // BEAT 11 — Markets (the cursor uses the real nav)
+      mark("markets");
       hideCaption();
-      cur.style.opacity = "0";
-      await sleep(300);
+      await clickEl(q('[data-tour="nav-markets"]'));
+      await waitFor('[data-tour="markets"]');
+      await sleep(700); // let live prices land
+      showCaption("Markets", "Live prices straight from the tape");
+      const markets = q('[data-tour="markets"]');
+      if (markets) {
+        await zoomTo(markets, 1.22);
+        await moveToEl(markets);
+        await sleep(2600);
+        await zoomReset();
+      }
+      if (cancelled) return;
 
-      // OUTRO — cinematic bookend (orb + wordmark + glyph row)
-      const playOutro = (window as unknown as { __playOutro?: () => void })
-        .__playOutro;
-      if (playOutro) {
-        playOutro();
+      // BEAT 12 — Leaderboard
+      mark("leaders");
+      hideCaption();
+      await clickEl(q('[data-tour="nav-leaders"]'));
+      await waitFor('[data-tour="leaders"]');
+      await sleep(500);
+      showCaption("Leaderboard", "Who moves the room, ranked live");
+      const leaders = q('[data-tour="leaders"]');
+      if (leaders) {
+        await zoomTo(leaders, 1.22);
+        await moveToEl(leaders);
+        await sleep(2600);
+        await zoomReset();
+      }
+      if (cancelled) return;
+
+      // BEAT 13 — back home, sign-off
+      mark("home");
+      hideCaption();
+      await clickEl(q('[data-tour="nav-live"]'));
+      await sleep(400);
+      await clickEl(q('[data-tour="toggle-stage"]'));
+      forcePlay();
+      await sleep(600);
+      showCaption("Market Bubble", "Every stream. One chat.");
+      await move(window.innerWidth * 0.5, window.innerHeight * 0.5);
+      await sleep(1900);
+      hideCaption();
+      if (cur) cur.style.opacity = "0";
+      await sleep(350);
+
+      // OUTRO — the cinematic sign-off (orb + wordmark lockup)
+      mark("outro");
+      if (win().__playOutro) {
+        win().__playOutro!();
         await sleep(6300);
       }
-      (window as unknown as { __tourActive?: boolean }).__tourActive = false;
+      mark("done");
+      win().__tourActive = false;
+    };
+    const safeRun = async () => {
+      try {
+        await run();
+      } catch (e) {
+        win().__filmErr = String((e as Error)?.stack || e);
+        win().__tourActive = false;
+      }
     };
 
-    (window as unknown as { __startTour?: () => void }).__startTour = () => {
+    win().__startTour = () => {
       cancelled = false;
-      void run();
+      void safeRun();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.shiftKey && (e.key === "L" || e.key === "l")) void run();
+      const t = e.target as HTMLElement | null;
+      const typing =
+        t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+      if (typing) return;
+      if (e.shiftKey && (e.key === "T" || e.key === "t")) {
+        cancelled = false; // a stale flag must never silently kill the film
+        void safeRun();
+      }
     };
     window.addEventListener("keydown", onKey);
 
-    let auto: ReturnType<typeof setTimeout> | undefined;
-    // Preserved legacy tour — the new spotlight showcase (DemoShowcase) owns
-    // Shift+T now. This one is kept accessible via ?tour=legacy or Shift+L.
-    if (typeof window !== "undefined" && /[?&]tour=legacy\b/.test(window.location.search)) {
-      auto = setTimeout(() => void run(true), 4000);
-    }
     return () => {
       cancelled = true;
       window.removeEventListener("keydown", onKey);
-      if (auto) clearTimeout(auto);
-      if (stage) stage.style.transform = "";
+      document.getElementById("__tcur")?.remove();
+      document.getElementById("__tcap")?.remove();
+      if (stage) {
+        stage.style.transform = "";
+        stage.style.transition = "";
+        stage.style.transformOrigin = "0 0";
+      }
+      delete win().__startTour;
+      win().__tourActive = false;
     };
   }, []);
 

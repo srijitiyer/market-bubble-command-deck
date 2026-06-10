@@ -48,6 +48,7 @@ export function TopBar() {
         {NAV.map((n) => (
           <button
             key={n.id}
+            data-tour={`nav-${n.id}`}
             onClick={() => setSection(n.id)}
             className={cn(
               "rounded-md px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-150",
@@ -67,6 +68,7 @@ export function TopBar() {
         {section === "live" && (
           <div className="hidden items-center gap-0.5 rounded-md bg-bg-soft p-0.5 ring-1 ring-border sm:flex">
             <button
+              data-tour="toggle-stage"
               onClick={() => setViewMode("stage")}
               className={cn(
                 "flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[11px] font-medium transition-colors duration-150",
@@ -78,6 +80,7 @@ export function TopBar() {
               <span className="hidden lg:inline">Stage</span>
             </button>
             <button
+              data-tour="toggle-deck"
               onClick={() => setViewMode("deck")}
               className={cn(
                 "flex h-7 items-center gap-1.5 rounded-[5px] px-2.5 text-[11px] font-medium transition-colors duration-150",

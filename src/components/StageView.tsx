@@ -26,7 +26,7 @@ export function StageView() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
       {/* bold live stats — the broadcast's vital signs, the visual anchor */}
-      <section className="flex shrink-0 items-end justify-between gap-4 px-0.5">
+      <section className="flex shrink-0 items-end justify-between gap-4 px-0.5" data-tour="stats">
         <HeroStatBar />
         <span className="hidden shrink-0 items-center gap-1.5 rounded-md bg-white/[0.04] px-2 py-1 ring-1 ring-border md:flex">
           <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
