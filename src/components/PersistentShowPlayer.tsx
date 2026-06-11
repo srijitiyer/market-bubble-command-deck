@@ -44,6 +44,24 @@ export function PersistentShowPlayer() {
         /* ignore */
       }
     };
+    // Relentless playback: after the user's one tap (first PLAYING event),
+    // never accept a pause again. Twitch's viewability logic pauses the embed
+    // whenever it judges the iframe insufficiently visible, and the exact
+    // threshold varies with viewport — parking handles the cases we predict,
+    // this watchdog resurrects playback from the ones we don't.
+    // NOTE: this is best-effort only — Twitch VOD play() needs user-gesture
+    // activation, so a genuine pause can't be cured from script. The real
+    // protection is the parking logic below, which prevents the viewability
+    // pause from ever firing. If a pause still slips through, the branded
+    // cover reappears and one tap restarts it.
+    let everPlayed = false;
+    const revive = setInterval(() => {
+      try {
+        if (ready && everPlayed && player?.isPaused?.()) player.play();
+      } catch {
+        /* ignore */
+      }
+    }, 800);
     // Uncover on any sign of life (PLAYING event or an advancing playhead);
     // cover ONLY on explicit pause/end. A stalled playhead must NOT re-cover —
     // buffering and Twitch's pre-roll ads stall it while playback is actually
@@ -79,7 +97,10 @@ export function PersistentShowPlayer() {
         ready = true;
         start();
       });
-      player.addEventListener(Twitch.Player.PLAYING, () => setCovered(false));
+      player.addEventListener(Twitch.Player.PLAYING, () => {
+        everPlayed = true;
+        setCovered(false);
+      });
       if (Twitch.Player.PLAY)
         player.addEventListener(Twitch.Player.PLAY, () => setCovered(false));
       player.addEventListener(Twitch.Player.PAUSE, () => setCovered(true));
@@ -108,6 +129,7 @@ export function PersistentShowPlayer() {
     return () => {
       cancelled = true;
       clearInterval(watch);
+      clearInterval(revive);
       delete (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback;
     };
   }, []);
@@ -182,7 +204,7 @@ export function PersistentShowPlayer() {
         sr.width > 0 && sr.height > 0
           ? (Math.max(0, visW) * Math.max(0, visH)) / (sr.width * sr.height)
           : 0;
-      if (frac < 0.45) {
+      if (frac < 0.75) {
         park();
         return;
       }
