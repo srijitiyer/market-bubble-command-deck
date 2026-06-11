@@ -359,3 +359,14 @@ body.mb-resizing * {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* --- OBS browser-source overlays (/obs/*) -------------------------------- */
+/* fully transparent page so chat/odds/leaderboard composite into OBS scenes */
+html.obs,
+html.obs body {
+  background: transparent !important;
+}
+html.obs body::before,
+html.obs body::after {
+  display: none;
+}

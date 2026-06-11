@@ -27,7 +27,7 @@ function fmtVol(v: number) {
   return `$${v}`;
 }
 
-export function PolymarketOdds() {
+export function PolymarketOdds({ limit = 4 }: { limit?: number } = {}) {
   const [markets, setMarkets] = useState<Market[]>(FALLBACK);
   const [live, setLive] = useState(false);
   const prev = useRef<Record<string, number>>({});
@@ -43,7 +43,7 @@ export function PolymarketOdds() {
           live?: boolean;
         };
         if (!active || !Array.isArray(json.markets) || !json.markets.length) return;
-        const next = json.markets.slice(0, 4).map((m) => ({
+        const next = json.markets.slice(0, limit).map((m) => ({
           ...m,
           delta: m.prob - (prev.current[m.question] ?? m.prob),
         }));
@@ -60,7 +60,7 @@ export function PolymarketOdds() {
       active = false;
       clearInterval(id);
     };
-  }, []);
+  }, [limit]);
 
   return (
     <div className="flex flex-col gap-2.5">

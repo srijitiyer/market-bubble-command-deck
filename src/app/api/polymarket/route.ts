@@ -50,7 +50,7 @@ export async function GET() {
     const markets: Mkt[] = [];
     const seen = new Set<string>();
     for (const m of list) {
-      if (!m.question || markets.length >= 4) continue;
+      if (!m.question || markets.length >= 8) continue;
       let prob: number;
       try {
         prob = Math.round(parseFloat(JSON.parse(m.outcomePrices || "[]")[0]) * 100);

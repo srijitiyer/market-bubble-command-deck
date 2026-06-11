@@ -44,6 +44,28 @@ $10,000 Vibe Code Challenge.
 Toggle **Demo OFF** and add a live Twitch channel (e.g. `xqc`) to see real chat
 ingested instantly.
 
+
+## OBS overlays (for the show's production)
+
+Every key surface ships as an OBS-ready browser source — transparent overlay
+pages with no navigation, built for dropping straight into stream scenes:
+
+```
+https://market-bubble-deck.vercel.app/obs/chat?platforms=twitch,kick,x&limit=12
+https://market-bubble-deck.vercel.app/obs/odds?limit=6
+https://market-bubble-deck.vercel.app/obs/leaderboard
+```
+
+Options (all overlays): `mock=0` real connectors only (default `mock=1` runs
+synthetic traffic so scenes can be laid out without a live stream) ·
+`channels=twitch:xqc,kick:foo` overrides the sources · `host=ansem|banks`
+narrows to one host's room · `platforms=twitch,kick` filters the chat ·
+`limit=12` rows/cards · `framed=0` removes the glass panel for bare compositing.
+
+OBS setup: add each URL as a Browser Source, enable transparent background,
+use 1920x1080 (or a narrower custom width for side rails), and crop/scale in
+OBS rather than resizing the page.
+
 ## Run locally
 
 ```bash
