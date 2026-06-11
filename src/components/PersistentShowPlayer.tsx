@@ -44,16 +44,17 @@ export function PersistentShowPlayer() {
         /* ignore */
       }
     };
+    // Uncover on any sign of life (PLAYING event or an advancing playhead);
+    // cover ONLY on explicit pause/end. A stalled playhead must NOT re-cover —
+    // buffering and Twitch's pre-roll ads stall it while playback is actually
+    // underway, and flashing the card over them reads as 'stuck'.
     let lastT = -1;
     const watch = setInterval(() => {
       try {
-        if (!ready || !player || typeof player.getCurrentTime !== "function") {
-          setCovered(true);
-          return;
-        }
+        if (!ready || !player || typeof player.getCurrentTime !== "function") return;
         const t = player.getCurrentTime();
         if (typeof t === "number") {
-          setCovered(!(t > lastT + 0.1));
+          if (t > lastT + 0.1) setCovered(false);
           lastT = t;
         }
       } catch {
@@ -79,6 +80,8 @@ export function PersistentShowPlayer() {
         start();
       });
       player.addEventListener(Twitch.Player.PLAYING, () => setCovered(false));
+      if (Twitch.Player.PLAY)
+        player.addEventListener(Twitch.Player.PLAY, () => setCovered(false));
       player.addEventListener(Twitch.Player.PAUSE, () => setCovered(true));
       player.addEventListener(Twitch.Player.ENDED, () => setCovered(true));
       (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback = start;
