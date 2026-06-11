@@ -43,7 +43,7 @@ export function StageView() {
             <div
               className="relative mx-auto w-full"
               data-tour="hero"
-              style={{ maxWidth: "max(440px, calc((100dvh - 360px) * 16 / 9))" }}
+              style={{ maxWidth: "max(560px, calc((100dvh - 280px) * 16 / 9))" }}
             >
               <StreamWatch />
               <div className="pointer-events-none absolute right-2.5 top-2.5">
