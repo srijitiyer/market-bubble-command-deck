@@ -57,6 +57,10 @@ export function UnifiedFeed() {
   const onScroll = useCallback(() => {
     const el = parentRef.current;
     if (!el) return;
+    // While the cinematic tour drives, it owns pause state. Its scripted
+    // scrollIntoView can land near the bottom, and auto-resuming there would
+    // restart autoscroll mid-beat and drag rows out from under the cursor.
+    if ((window as unknown as { __tourActive?: boolean }).__tourActive) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom > 90) {
       if (!paused) {

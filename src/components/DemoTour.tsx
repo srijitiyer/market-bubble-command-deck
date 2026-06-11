@@ -357,9 +357,12 @@ export function DemoTour() {
       await sleep(550);
       deck.setPaused(true);
       await sleep(250);
+      // target the broadcast's own $SOL chip, scoped to real feed rows
+      // ([data-index]) so a chip in the featured bar can't steal the pick —
+      // and never a random demo message's ticker that landed afterwards
       const chip = chat
-        ? [...chat.querySelectorAll("a")]
-            .filter((a) => (a.textContent?.trim() || "")[0] === "$")
+        ? [...chat.querySelectorAll("[data-index] a")]
+            .filter((a) => (a.textContent?.trim() || "") === "$SOL")
             .pop()
         : null;
       if (chip) {
@@ -368,9 +371,18 @@ export function DemoTour() {
         // the middle of the feed so the zoom can frame it and the price card
         // has room to pop, at any viewport size
         chip.scrollIntoView({ block: "center" });
-        await sleep(380);
+        // the virtualizer re-measures rows after a programmatic scroll; wait
+        // until the chip's rect holds still before framing it
+        let prev = chip.getBoundingClientRect();
+        for (let i = 0; i < 10; i++) {
+          await sleep(90);
+          const r = chip.getBoundingClientRect();
+          if (Math.abs(r.top - prev.top) < 1 && Math.abs(r.left - prev.left) < 1) break;
+          prev = r;
+        }
         await zoomTo(chip, 1.35);
         await moveToEl(chip);
+        await moveToEl(chip); // re-measure once more; no-op unless it drifted
         hover(chip);
         await sleep(2700);
         unhover(chip);

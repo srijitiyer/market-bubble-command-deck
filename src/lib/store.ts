@@ -107,7 +107,11 @@ function scheduleFlush(get: () => DeckState, set: SetFn) {
     // Always append (even while paused) so resume genuinely scrolls back to the
     // messages that arrived — the "N new" pill then points at real content, and
     // nothing is silently dropped. Pause only freezes autoscroll (UnifiedFeed).
-    set({ messages: [...state.messages, ...incoming].slice(-MAX_MESSAGES) });
+    // While paused, don't trim from the top either: dropping head rows shifts
+    // every row under a reader (or the demo cursor) mid-hover. The trim is
+    // applied on resume; a generous hard cap guards runaway growth meanwhile.
+    const cap = state.paused ? MAX_MESSAGES * 3 : MAX_MESSAGES;
+    set({ messages: [...state.messages, ...incoming].slice(-cap) });
     applyStats(incoming, set, get);
     // Audio cue for high-signal traffic (broadcaster/mod or mentions).
     if (state.soundOn && incoming.some((m) => m.isBroadcaster || m.isMod)) {
@@ -401,7 +405,12 @@ export const useDeck = create<DeckState>((set, get) => ({
 
   setMode: (mode) => set((s) => ({ filters: { ...s.filters, mode } })),
 
-  setPaused: (paused) => set({ paused }),
+  setPaused: (paused) =>
+    set((s) => ({
+      paused,
+      // apply the deferred trim on resume (see the flush above)
+      messages: paused ? s.messages : s.messages.slice(-MAX_MESSAGES),
+    })),
 
   toggleDemo: () => {
     const next = !get().demoMode;
