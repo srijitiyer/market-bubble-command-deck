@@ -17,13 +17,15 @@ const DEMO_START = 200; // jump past the intro, straight into the conversation
 function ShowReplay() {
   return (
     <div className="relative h-full w-full bg-black">
+      {/* oversized + center-cropped so YouTube's title bar / watermark chrome
+          falls outside the visible tile (no embed param can disable it) */}
       <iframe
         id="mb-show-embed"
         src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&mute=1&controls=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&playsinline=1&enablejsapi=1&start=${DEMO_START}&loop=1&playlist=${DEMO_VIDEO_ID}`}
         title="Market Bubble — episode replay"
         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
         allowFullScreen
-        className="h-full w-full"
+        className="absolute left-1/2 top-1/2 h-[136%] w-[136%] -translate-x-1/2 -translate-y-1/2"
         frameBorder={0}
       />
       <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
