@@ -80,7 +80,7 @@ const HOST_TAKES: { host: "ansem" | "banks"; name: string; text: string }[] = [
   { host: "ansem", name: "Ansem", text: "the trade is patience here, don't force it" },
   { host: "ansem", name: "Ansem", text: "$BUBBLE flows are quietly stacking, watch the bid" },
   { host: "ansem", name: "Ansem", text: "alts don't move until BTC stops, you know the drill" },
-  { host: "banks", name: "Banks", text: "distribution is the edge — we put eyes on the trade, that's the moat" },
+  { host: "banks", name: "Banks", text: "distribution is the edge, we put eyes on the trade, that's the moat" },
   { host: "banks", name: "Banks", text: "clip that and post it everywhere, this is the thesis" },
   { host: "banks", name: "Banks", text: "command attention first, the money follows" },
   { host: "banks", name: "Banks", text: "every Thursday we turn one chat into the whole market" },
@@ -146,7 +146,7 @@ export function makeDemoMessage(platform: Platform, channel: string): ChatMessag
   let text = pick(MESSAGES);
 
   // Occasionally splice in a ticker or platform emote for texture.
-  if (Math.random() < 0.18) text += ` $${pick(TICKERS)}`;
+  if (Math.random() < 0.18 && !text.includes("$")) text += ` $${pick(TICKERS)}`;
   if (platform === "twitch" && Math.random() < 0.25) text += ` ${pick(EMOTES_TWITCH)}`;
   if (platform === "kick" && Math.random() < 0.25) text += ` ${pick(EMOTES_KICK)}`;
   if (Math.random() < 0.08) text += " @treyce";

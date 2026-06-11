@@ -257,6 +257,7 @@ export function DemoTour() {
     // ---- the film -------------------------------------------------------------
     const mark = (m: string) => {
       win().__filmBeat = m;
+      forcePlay(); // keep the broadcast rolling across view switches
     };
     const run = async () => {
       win().__tourActive = true;

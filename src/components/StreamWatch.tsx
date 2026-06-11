@@ -21,11 +21,16 @@ type TwitchGlobal = { Player: any };
 
 function ShowReplay({ host }: { host: string | null }) {
   const mountRef = useRef<HTMLDivElement>(null);
+  // While the player isn't rolling (fresh mount, or a view-switch remounted it
+  // and Twitch wants a new gesture), cover its paused chrome with a branded
+  // card. Click-through still reaches the player, so one tap starts it.
+  const [covered, setCovered] = useState(true);
 
   useEffect(() => {
     if (!host || !mountRef.current) return;
     const mount = mountRef.current;
     let cancelled = false;
+    let ready = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let player: any;
 
@@ -37,6 +42,24 @@ function ShowReplay({ host }: { host: string | null }) {
         /* ignore */
       }
     };
+    // Truthful "is it rolling" check: the preview gate reports isPaused=false,
+    // so trust only PLAYING/PAUSE events plus an advancing playhead.
+    let lastT = -1;
+    const watch = setInterval(() => {
+      try {
+        if (!ready || !player || typeof player.getCurrentTime !== "function") {
+          setCovered(true);
+          return;
+        }
+        const t = player.getCurrentTime();
+        if (typeof t === "number") {
+          setCovered(!(t > lastT + 0.1));
+          lastT = t;
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 900);
     const create = () => {
       const Twitch = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
       if (cancelled || !Twitch?.Player || !mount) return;
@@ -50,7 +73,13 @@ function ShowReplay({ host }: { host: string | null }) {
         width: "100%",
         height: "100%",
       });
-      player.addEventListener(Twitch.Player.READY, start);
+      player.addEventListener(Twitch.Player.READY, () => {
+        ready = true;
+        start();
+      });
+      player.addEventListener(Twitch.Player.PLAYING, () => setCovered(false));
+      player.addEventListener(Twitch.Player.PAUSE, () => setCovered(true));
+      player.addEventListener(Twitch.Player.ENDED, () => setCovered(true));
       (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback = start;
     };
 
@@ -76,6 +105,7 @@ function ShowReplay({ host }: { host: string | null }) {
     window.addEventListener("keydown", onGesture);
     return () => {
       cancelled = true;
+      clearInterval(watch);
       window.removeEventListener("pointerdown", onGesture);
       window.removeEventListener("keydown", onGesture);
       delete (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback;
@@ -85,6 +115,28 @@ function ShowReplay({ host }: { host: string | null }) {
   return (
     <div className="relative h-full w-full bg-black">
       <div ref={mountRef} id="mb-show-embed" className="h-full w-full" />
+      {covered && (
+        <div
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3"
+          style={{
+            background:
+              "radial-gradient(80% 70% at 50% 40%, #141210, #0a0a09 75%)",
+          }}
+        >
+          <span
+            className="h-12 w-12 rounded-full"
+            style={{
+              background:
+                "radial-gradient(circle at 38% 30%, #fefdfb, #ece3d0 34%, #bcab86 70%, #6f6450)",
+              boxShadow: "0 6px 26px rgba(233,225,209,.3)",
+            }}
+          />
+          <span className="font-serif text-[17px] font-semibold text-fg">
+            Market Bubble
+          </span>
+          <span className="eyebrow">Replay · tap to play</span>
+        </div>
+      )}
       <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
         <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
