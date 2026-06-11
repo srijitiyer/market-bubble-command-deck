@@ -30,6 +30,7 @@ import { CommandPalette } from "./CommandPalette";
 import { ResizeHandle } from "./ResizeHandle";
 import { PanelHeader } from "./PanelHeader";
 import { DemoTour } from "./DemoTour";
+import { PersistentShowPlayer } from "./PersistentShowPlayer";
 
 const SEED = [
   { platform: "twitch" as const, channel: "marketbubble" },
@@ -198,7 +199,7 @@ export function Deck() {
       {/* the zoomable stage (everything the tour can zoom into) */}
       <div
         id="deck-stage"
-        className="flex min-h-0 flex-1 flex-col"
+        className="relative flex min-h-0 flex-1 flex-col"
         style={{ transformOrigin: "0 0", willChange: "transform" }}
       >
       <TopBar />
@@ -252,6 +253,7 @@ export function Deck() {
       ) : (
         <div className="relative z-10 min-h-0 flex-1 p-3">{centerMain}</div>
       )}
+      <PersistentShowPlayer />
       </div>
     </div>
   );

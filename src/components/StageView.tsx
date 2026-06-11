@@ -46,7 +46,7 @@ export function StageView() {
               style={{ maxWidth: "max(560px, calc((100dvh - 280px) * 16 / 9))" }}
             >
               <StreamWatch />
-              <div className="pointer-events-none absolute right-2.5 top-2.5">
+              <div className="pointer-events-none absolute right-2.5 top-2.5 z-20">
                 <div className="pointer-events-auto" data-tour="hostswitch">
                   <HostSwitch />
                 </div>
