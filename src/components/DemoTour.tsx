@@ -357,21 +357,19 @@ export function DemoTour() {
       await sleep(550);
       deck.setPaused(true);
       await sleep(250);
-      // the chip lands in the LAST row, pinned to the stage's bottom corner
-      // where the clamped zoom can't center it — lift it into the middle of
-      // the column first so the price card has room to pop
-      const log = chat?.querySelector('[role="log"]') as HTMLElement | null;
-      if (log) {
-        log.scrollTop -= 230;
-        await sleep(320);
-      }
       const chip = chat
         ? [...chat.querySelectorAll("a")]
             .filter((a) => (a.textContent?.trim() || "")[0] === "$")
             .pop()
         : null;
       if (chip) {
-        await zoomTo(chip, 1.4); // center the action, not the container
+        // the chip lands in the LAST row, pinned to the stage's bottom corner
+        // where the clamped zoom can't center it — scroll the chip itself to
+        // the middle of the feed so the zoom can frame it and the price card
+        // has room to pop, at any viewport size
+        chip.scrollIntoView({ block: "center" });
+        await sleep(380);
+        await zoomTo(chip, 1.35);
         await moveToEl(chip);
         hover(chip);
         await sleep(2700);
