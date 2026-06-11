@@ -85,6 +85,8 @@ export function PersistentShowPlayer() {
       player.addEventListener(Twitch.Player.PAUSE, () => setCovered(true));
       player.addEventListener(Twitch.Player.ENDED, () => setCovered(true));
       (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback = start;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as unknown as { __showPlayer?: any }).__showPlayer = player;
     };
 
     const existing = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
@@ -117,11 +119,29 @@ export function PersistentShowPlayer() {
     if (!el || !stage) return;
     let raf = 0;
     let drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
+    // Twitch's embed pauses playback when its iframe leaves the viewport
+    // (pure geometry — visibility:hidden does NOT trigger it). The tour's
+    // zoom/pan regularly pushes the hero off-screen, so whenever the slot is
+    // effectively invisible the box parks HIDDEN at the viewport center
+    // instead of following the slot off-screen: the iframe's rect always
+    // intersects the viewport and playback never stops.
+    const park = () => {
+      const st = stage.getBoundingClientRect();
+      const scale = st.width / (stage as HTMLElement).offsetWidth || 1;
+      const px = (window.innerWidth / 2 - (BASE_W * scale) / 4 - st.left) / scale;
+      const py = (window.innerHeight / 2 - (BASE_H * scale) / 4 - st.top) / scale;
+      el.style.left = `${px}px`;
+      el.style.top = `${py}px`;
+      el.style.transform = "scale(0.5, 0.5)";
+      el.style.clipPath = "none";
+      el.style.visibility = "hidden";
+      drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
+    };
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const slot = document.querySelector("[data-show-slot]");
       if (!slot) {
-        if (el.style.visibility !== "hidden") el.style.visibility = "hidden";
+        park();
         return;
       }
       const sr = slot.getBoundingClientRect();
@@ -150,6 +170,21 @@ export function PersistentShowPlayer() {
           cb = Math.min(cb, ar.bottom);
         }
         a = a.parentElement;
+      }
+      // Park unless the slot is MEANINGFULLY visible (after ancestor clips +
+      // viewport). Twitch doesn't just pause a fully off-screen embed — below
+      // some visible-area threshold it pauses AND ignores play(), observed at
+      // ~7% visible. A mostly-clipped strip isn't worth a dead player, so the
+      // tile blanks below ~45% and the stream never stops.
+      const visW = Math.min(cr, window.innerWidth) - Math.max(cl, 0);
+      const visH = Math.min(cb, window.innerHeight) - Math.max(ct, 0);
+      const frac =
+        sr.width > 0 && sr.height > 0
+          ? (Math.max(0, visW) * Math.max(0, visH)) / (sr.width * sr.height)
+          : 0;
+      if (frac < 0.45) {
+        park();
+        return;
       }
       // clip in the box's PRE-transform coordinate space (divide by sx/sy)
       const it = Math.max(0, ct - sr.top) / scale / sy;
