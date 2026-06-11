@@ -16,10 +16,10 @@ import { AnimatedNumber } from "./AnimatedNumber";
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="font-serif text-[28px] font-semibold leading-none tracking-tight text-fg tabular-nums">
+      <span className="mono text-[24px] font-semibold leading-none tracking-tight text-fg">
         <AnimatedNumber value={value} format={formatNumber} />
       </span>
-      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-faint">
+      <span className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.14em] text-faint">
         {label}
       </span>
     </div>
@@ -50,9 +50,9 @@ export function HeroStatBar() {
     <div className="flex items-end justify-between gap-4">
       <div className="flex items-end gap-7">
         <Stat label="Viewers" value={viewers} />
-        <Stat label="Active chatters" value={chatters} />
+        <Stat label="Chatters" value={chatters} />
         <Stat label="Messages" value={totalMessages} />
-        <Stat label="Msgs / min" value={rate} />
+        <Stat label="Per min" value={rate} />
       </div>
 
       {/* per-platform share of the merged feed */}
