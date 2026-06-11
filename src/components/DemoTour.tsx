@@ -240,11 +240,10 @@ export function DemoTour() {
       el.scrollIntoView({ block: "nearest" });
       await sleep(300);
     };
-    // keep the show embed actually playing (YouTube pauses idle muted embeds)
+    // keep the show broadcast actually playing (Twitch gates VOD playback
+    // behind a gesture; StreamWatch exposes an armed starter)
     const forcePlay = () => {
-      const f = document.getElementById("mb-show-embed") as HTMLIFrameElement | null;
-      f?.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', "*");
-      f?.contentWindow?.postMessage('{"event":"command","func":"mute","args":""}', "*");
+      (win() as { __armShowPlayback?: () => void }).__armShowPlayback?.();
     };
     const waitFor = async (sel: string, tries = 20) => {
       for (let i = 0; i < tries; i++) {
@@ -547,6 +546,9 @@ export function DemoTour() {
       if (typing) return;
       if (e.shiftKey && (e.key === "T" || e.key === "t")) {
         cancelled = false; // a stale flag must never silently kill the film
+        // best-effort: nudge the broadcast (activation doesn't cross into the
+        // Twitch iframe, so for recordings click play on the video once first)
+        (win() as { __armShowPlayback?: () => void }).__armShowPlayback?.();
         void safeRun();
       }
     };

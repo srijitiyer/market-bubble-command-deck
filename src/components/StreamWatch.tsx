@@ -1,33 +1,90 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Tv } from "lucide-react";
 import { useDeck, channelKey } from "@/lib/store";
 import { PLATFORMS, type StreamChannel } from "@/lib/types";
 import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 
-// The demo broadcast: a real Market Bubble episode (Ansem + Banks, presented by
-// Polymarket — "Why Ansem Thinks Ethereum Is Done.. | Market Bubble #4"). Served
-// from YouTube so it autoplays muted with zero clicks. Swap demo OFF + add a
-// live Twitch/Kick channel for a real first-party source.
-const DEMO_VIDEO_ID = "F4OhqZjtVkY";
-const DEMO_START = 200; // jump past the intro, straight into the conversation
+// The demo broadcast: the real Market Bubble Twitch broadcast (FaZe Banks +
+// Ansem, Polymarket lower-third), full-bleed and uncropped via Twitch's JS
+// player. Twitch gates VOD playback behind a user gesture, so playback is
+// "armed": window.__armShowPlayback() starts it synchronously from the demo
+// film's Shift+T keydown, and any first click/keypress on the page also starts
+// it as a fallback.
+const DEMO_VOD_ID = "2788673017"; // fazebanks — Market Bubble broadcast
+const DEMO_VOD_START = "14m00s"; // straight into the conversation
 
-function ShowReplay() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TwitchGlobal = { Player: any };
+
+function ShowReplay({ host }: { host: string | null }) {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!host || !mountRef.current) return;
+    const mount = mountRef.current;
+    let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let player: any;
+
+    const start = () => {
+      try {
+        player?.setMuted(true);
+        player?.play();
+      } catch {
+        /* ignore */
+      }
+    };
+    const create = () => {
+      const Twitch = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
+      if (cancelled || !Twitch?.Player || !mount) return;
+      mount.innerHTML = "";
+      player = new Twitch.Player(mount, {
+        video: DEMO_VOD_ID,
+        parent: [host],
+        autoplay: true,
+        muted: true,
+        time: DEMO_VOD_START,
+        width: "100%",
+        height: "100%",
+      });
+      player.addEventListener(Twitch.Player.READY, start);
+      (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback = start;
+    };
+
+    const existing = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
+    if (existing?.Player) {
+      create();
+    } else {
+      const id = "twitch-embed-js";
+      let sc = document.getElementById(id) as HTMLScriptElement | null;
+      if (sc) {
+        sc.addEventListener("load", create);
+      } else {
+        sc = document.createElement("script");
+        sc.id = id;
+        sc.src = "https://player.twitch.tv/js/embed/v1.js";
+        sc.onload = create;
+        document.body.appendChild(sc);
+      }
+    }
+    // fallback: the first real interaction anywhere starts playback
+    const onGesture = () => start();
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("keydown", onGesture);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+      delete (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback;
+    };
+  }, [host]);
+
   return (
     <div className="relative h-full w-full bg-black">
-      {/* oversized + center-cropped so YouTube's title bar / watermark chrome
-          falls outside the visible tile (no embed param can disable it) */}
-      <iframe
-        id="mb-show-embed"
-        src={`https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&mute=1&controls=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&playsinline=1&enablejsapi=1&start=${DEMO_START}&loop=1&playlist=${DEMO_VIDEO_ID}`}
-        title="Market Bubble — episode replay"
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-        allowFullScreen
-        className="absolute left-1/2 top-1/2 h-[136%] w-[136%] -translate-x-1/2 -translate-y-1/2"
-        frameBorder={0}
-      />
+      <div ref={mountRef} id="mb-show-embed" className="h-full w-full" />
       <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
         <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
@@ -52,7 +109,7 @@ function StreamEmbed({
 }) {
   const { platform, channel } = stream;
 
-  if (demo) return <ShowReplay />;
+  if (demo) return <ShowReplay host={host} />;
 
   if (platform === "twitch") {
     if (!host) return <EmbedSkeleton />;
