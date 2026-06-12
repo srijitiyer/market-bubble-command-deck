@@ -7,27 +7,23 @@ import { PLATFORMS, type StreamChannel } from "@/lib/types";
 import { cn, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "./icons";
 
-// The demo broadcast renders through PersistentShowPlayer (a singleton that
-// never unmounts, so playback survives view switches). Tiles just render a
-// slot the floating player follows; the brand card underneath only shows in
-// the rare moments the player parks itself (slot mostly off-viewport).
+// The demo broadcast renders through PersistentShowPlayer: a singleton <video>
+// that is re-parented into whichever [data-show-slot] is on screen (playback
+// survives the move). The slot is just a fill container; a small label sits
+// over it. Black underneath shows only for the frame before the video lands.
 function ShowReplay() {
   return (
-    <div
-      data-show-slot
-      className="flex h-full w-full flex-col items-center justify-center gap-2 bg-black"
-    >
-      <span
-        className="h-9 w-9 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle at 38% 30%, #fefdfb, #ece3d0 34%, #bcab86 70%, #6f6450)",
-          boxShadow: "0 4px 18px rgba(233,225,209,.25)",
-        }}
-      />
-      <span className="font-serif text-[15px] font-semibold text-fg">
-        Market Bubble
-      </span>
+    <div className="relative h-full w-full overflow-hidden rounded-xl bg-black">
+      <div data-show-slot className="absolute inset-0" />
+      <div className="pointer-events-none absolute left-2.5 top-2.5 z-[1] flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
+        <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
+          Replay
+        </span>
+        <span className="rounded bg-white/10 px-1 text-[9px] font-medium uppercase tracking-wider text-dim">
+          Market Bubble
+        </span>
+      </div>
     </div>
   );
 }
