@@ -195,6 +195,10 @@ export function Deck() {
       <LandingOutro />
       <CommandPalette />
       <DemoTour />
+      {/* The broadcast player lives OUTSIDE the zoomable stage so it positions
+          in true screen coordinates (a transformed ancestor would break its
+          position:fixed). It tracks the stream tile's on-screen rect itself. */}
+      <PersistentShowPlayer />
 
       {/* the zoomable stage (everything the tour can zoom into) */}
       <div
@@ -253,7 +257,6 @@ export function Deck() {
       ) : (
         <div className="relative z-10 min-h-0 flex-1 p-3">{centerMain}</div>
       )}
-      <PersistentShowPlayer />
       </div>
     </div>
   );

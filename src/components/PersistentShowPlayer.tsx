@@ -23,6 +23,7 @@ type TwitchGlobal = { Player: any };
 
 export function PersistentShowPlayer() {
   const boxRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
   const [covered, setCovered] = useState(true);
 
@@ -137,19 +138,22 @@ export function PersistentShowPlayer() {
   // follow the current view's slot every frame (cheap: dirty-checked writes)
   useEffect(() => {
     const el = boxRef.current;
+    const inner = innerRef.current;
     const stage = document.getElementById("deck-stage");
-    if (!el || !stage) return;
+    if (!el || !inner || !stage) return;
     let raf = 0;
-    let drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
-    // The player FILLS its slot exactly — a 16:9 video in the 16:9 tile, so it
-    // covers the whole thing with no letterbox bars, no shrinking, no centered
-    // mini-player. When a tour beat zooms past it the slot just slides under
-    // the viewport edge and the video is clipped there like any normal element
-    // would be. The only special case is when the slot is gone entirely (a
-    // section without a stream tile) — then the box hides.
+    let drawn = { l: -1, t: -1, w: -1, h: -1, ix: -1, iy: -1, s: -1 };
+    // The player covers ONLY the on-screen-visible part of its slot, and the
+    // video FILLS that region (16:9 in a 16:9 tile -> no letterbox bars). The
+    // box is position:fixed in true screen coords, so its iframe is ALWAYS
+    // fully within the viewport no matter how far a tour beat pans the slot
+    // off-screen — and Twitch's viewability pause (which a VOD can't recover
+    // from) keys off the iframe's viewport intersection, so it never fires.
+    // The iframe itself never resizes (it stays BASE_W×BASE_H and is only
+    // transform-scaled), which is the other thing that would pause it.
     const hide = () => {
       if (el.style.visibility !== "hidden") el.style.visibility = "hidden";
-      drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
+      drawn = { l: -1, t: -1, w: -1, h: -1, ix: -1, iy: -1, s: -1 };
     };
     const tick = () => {
       raf = requestAnimationFrame(tick);
@@ -163,54 +167,57 @@ export function PersistentShowPlayer() {
         hide();
         return;
       }
-      const st = stage.getBoundingClientRect();
-      const scale = st.width / (stage as HTMLElement).offsetWidth || 1;
-      // box fills the slot exactly (slot is 16:9, video is 16:9 -> no bars)
-      const x = (sr.left - st.left) / scale;
-      const y = (sr.top - st.top) / scale;
-      const sx = sr.width / scale / BASE_W;
-      const sy = sr.height / scale / BASE_H;
-      // mask to the slot's visible region (intersection with overflow/scroll
-      // ancestors) so a scrolled column can't let the video bleed over its
-      // neighbours — paint-only, it never moves the iframe, so playback holds
-      let cl = sr.left,
-        ct = sr.top,
-        cr = sr.right,
-        cb = sr.bottom;
+      // visible region = slot ∩ overflow/scroll ancestors ∩ viewport
+      let l = sr.left,
+        t = sr.top,
+        r = sr.right,
+        b = sr.bottom;
       let a = slot.parentElement;
-      while (a && a !== stage) {
+      while (a && a !== document.body) {
         const cs = getComputedStyle(a);
         if (/(auto|scroll|hidden)/.test(cs.overflowY + cs.overflowX)) {
           const ar = a.getBoundingClientRect();
-          cl = Math.max(cl, ar.left);
-          ct = Math.max(ct, ar.top);
-          cr = Math.min(cr, ar.right);
-          cb = Math.min(cb, ar.bottom);
+          l = Math.max(l, ar.left);
+          t = Math.max(t, ar.top);
+          r = Math.min(r, ar.right);
+          b = Math.min(b, ar.bottom);
         }
         a = a.parentElement;
       }
-      const it = Math.max(0, ct - sr.top) / scale / sy;
-      const il = Math.max(0, cl - sr.left) / scale / sx;
-      const ib = Math.max(0, sr.bottom - cb) / scale / sy;
-      const ir = Math.max(0, sr.right - cr) / scale / sx;
-      const clip =
-        it + il + ib + ir < 0.5
-          ? "none"
-          : `inset(${it.toFixed(1)}px ${ir.toFixed(1)}px ${ib.toFixed(1)}px ${il.toFixed(1)}px)`;
-      const w = sr.width;
-      const h = sr.height;
+      l = Math.max(l, 0);
+      t = Math.max(t, 0);
+      r = Math.min(r, window.innerWidth);
+      b = Math.min(b, window.innerHeight);
+      const w = r - l;
+      const h = b - t;
+      if (w < 80 || h < 45) {
+        hide();
+        return;
+      }
+      // the video is scaled to the slot's full on-screen size (so it reads at
+      // the beat's zoom level), centered in the visible region, and the region
+      // clips the overflow. cover = the slot's current screen scale.
+      const cover = Math.max(sr.width / BASE_W, sr.height / BASE_H);
+      // center the iframe on the region's center (which is on-screen), NOT on
+      // the slot's center (which may be off-screen) — that's what keeps the
+      // iframe rect inside the viewport and playback alive.
+      const ix = w / 2;
+      const iy = h / 2;
       if (
-        Math.abs(x - drawn.x) > 0.5 ||
-        Math.abs(y - drawn.y) > 0.5 ||
+        Math.abs(l - drawn.l) > 0.5 ||
+        Math.abs(t - drawn.t) > 0.5 ||
         Math.abs(w - drawn.w) > 0.5 ||
         Math.abs(h - drawn.h) > 0.5 ||
-        clip !== drawn.clip
+        Math.abs(cover - drawn.s) > 0.001
       ) {
-        drawn = { x, y, w, h, clip };
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
-        el.style.transform = `scale(${(sx || 0.001).toFixed(4)}, ${(sy || 0.001).toFixed(4)})`;
-        el.style.clipPath = clip;
+        drawn = { l, t, w, h, ix, iy, s: cover };
+        el.style.left = `${l}px`;
+        el.style.top = `${t}px`;
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+        inner.style.left = `${ix}px`;
+        inner.style.top = `${iy}px`;
+        inner.style.transform = `translate(-50%, -50%) scale(${cover.toFixed(4)})`;
       }
       if (el.style.visibility !== "visible") el.style.visibility = "visible";
     };
@@ -221,20 +228,30 @@ export function PersistentShowPlayer() {
   return (
     <div
       ref={boxRef}
-      className="absolute"
+      className="overflow-hidden rounded-xl"
       style={{
+        position: "fixed",
         zIndex: 12,
         visibility: "hidden",
         left: 0,
         top: 0,
         width: BASE_W,
         height: BASE_H,
-        transformOrigin: "0 0",
-        maskRepeat: "no-repeat",
-        WebkitMaskRepeat: "no-repeat",
       }}
     >
-      <div ref={mountRef} className="h-full w-full overflow-hidden rounded-xl bg-black" />
+      <div
+        ref={innerRef}
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          width: BASE_W,
+          height: BASE_H,
+          transformOrigin: "center center",
+        }}
+      >
+        <div ref={mountRef} className="h-full w-full bg-black" />
+      </div>
       {covered && (
         <div
           className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl"
