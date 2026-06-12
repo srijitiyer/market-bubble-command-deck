@@ -1,136 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 // The demo broadcast player as a SINGLETON that never unmounts. View switches
-// (Stage <-> Deck <-> sections) remount their video *tiles*, and a remounted
-// Twitch player loses playback until a fresh user gesture — so instead the
-// tiles render an empty [data-show-slot] and this floating player follows the
-// slot's rect every frame. One tap starts playback once, and it survives the
-// whole demo film. Lives inside #deck-stage so the tour's zoom transform
-// carries it; clips against scrollable ancestors so it never bleeds over
-// other panels while a column scrolls.
-const DEMO_VOD_ID = "2788673017"; // fazebanks — Market Bubble broadcast
-const DEMO_VOD_START = "14m00s";
-// Fixed internal player size: Twitch PAUSES when its iframe is resized below
-// its 400x300 minimum (the Deck tile is smaller), so the iframe never resizes —
-// the whole box CSS-scales to fit the slot instead.
-const BASE_W = 880;
-const BASE_H = 495;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TwitchGlobal = { Player: any };
+// (Stage <-> Deck <-> sections) remount their stream *tiles*, so the tiles
+// render an empty [data-show-slot] and this floating <video> follows the slot's
+// on-screen rect every frame, filling it with object-fit:cover (no letterbox
+// bars). It lives OUTSIDE the zoomable #deck-stage and positions itself in true
+// screen coordinates (position:fixed), reading the slot's already-transformed
+// rect — so a beat can pan/zoom the slot anywhere and the video just tracks it.
+//
+// Why a self-hosted clip instead of the Twitch embed: the embed gated VOD
+// playback behind a user gesture, PAUSED whenever its iframe was resized below
+// 400x300 or judged insufficiently visible, and a paused VOD could not be
+// resumed from script. A plain muted <video> autoplays with no gesture, loops,
+// and never pauses on resize or viewport changes — none of those failure modes
+// exist. The clip is a real segment of the show (same VOD, same start point).
+const SHOW_SRC = "/broadcast.mp4";
 
 export function PersistentShowPlayer() {
   const boxRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const mountRef = useRef<HTMLDivElement>(null);
-  const [covered, setCovered] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  // create the player exactly once
+  // keep it playing (autoplay handles it; this is belt-and-suspenders) and
+  // expose a harmless starter the tour can call
   useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
-    const host = window.location.hostname;
-    let cancelled = false;
-    let ready = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let player: any;
-
-    const start = () => {
-      try {
-        player?.setMuted(true);
-        player?.play();
-      } catch {
-        /* ignore */
-      }
+    const v = videoRef.current;
+    if (!v) return;
+    const play = () => {
+      v.muted = true;
+      void v.play().catch(() => {});
     };
-    // Relentless playback: after the user's one tap (first PLAYING event),
-    // never accept a pause again. Twitch's viewability logic pauses the embed
-    // whenever it judges the iframe insufficiently visible, and the exact
-    // threshold varies with viewport — parking handles the cases we predict,
-    // this watchdog resurrects playback from the ones we don't.
-    // NOTE: this is best-effort only — Twitch VOD play() needs user-gesture
-    // activation, so a genuine pause can't be cured from script. The real
-    // protection is the parking logic below, which prevents the viewability
-    // pause from ever firing. If a pause still slips through, the branded
-    // cover reappears and one tap restarts it.
-    let everPlayed = false;
-    const revive = setInterval(() => {
-      try {
-        if (ready && everPlayed && player?.isPaused?.()) player.play();
-      } catch {
-        /* ignore */
-      }
-    }, 800);
-    // Uncover on any sign of life (PLAYING event or an advancing playhead);
-    // cover ONLY on explicit pause/end. A stalled playhead must NOT re-cover —
-    // buffering and Twitch's pre-roll ads stall it while playback is actually
-    // underway, and flashing the card over them reads as 'stuck'.
-    let lastT = -1;
-    const watch = setInterval(() => {
-      try {
-        if (!ready || !player || typeof player.getCurrentTime !== "function") return;
-        const t = player.getCurrentTime();
-        if (typeof t === "number") {
-          if (t > lastT + 0.1) setCovered(false);
-          lastT = t;
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 900);
-
-    const create = () => {
-      const Twitch = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
-      if (cancelled || !Twitch?.Player || !mount) return;
-      mount.innerHTML = "";
-      player = new Twitch.Player(mount, {
-        video: DEMO_VOD_ID,
-        parent: [host],
-        autoplay: true,
-        muted: true,
-        time: DEMO_VOD_START,
-        width: "100%",
-        height: "100%",
-      });
-      player.addEventListener(Twitch.Player.READY, () => {
-        ready = true;
-        start();
-      });
-      player.addEventListener(Twitch.Player.PLAYING, () => {
-        everPlayed = true;
-        setCovered(false);
-      });
-      if (Twitch.Player.PLAY)
-        player.addEventListener(Twitch.Player.PLAY, () => setCovered(false));
-      player.addEventListener(Twitch.Player.PAUSE, () => setCovered(true));
-      player.addEventListener(Twitch.Player.ENDED, () => setCovered(true));
-      (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback = start;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as unknown as { __showPlayer?: any }).__showPlayer = player;
+    play();
+    (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback = play;
+    (window as unknown as { __showPlayer?: HTMLVideoElement }).__showPlayer = v;
+    // if the tab is backgrounded the browser may pause it; resume on return
+    const onVis = () => {
+      if (!document.hidden) play();
     };
-
-    const existing = (window as unknown as { Twitch?: TwitchGlobal }).Twitch;
-    if (existing?.Player) {
-      create();
-    } else {
-      const id = "twitch-embed-js";
-      let sc = document.getElementById(id) as HTMLScriptElement | null;
-      if (sc) {
-        sc.addEventListener("load", create);
-      } else {
-        sc = document.createElement("script");
-        sc.id = id;
-        sc.src = "https://player.twitch.tv/js/embed/v1.js";
-        sc.onload = create;
-        document.body.appendChild(sc);
-      }
-    }
+    document.addEventListener("visibilitychange", onVis);
     return () => {
-      cancelled = true;
-      clearInterval(watch);
-      clearInterval(revive);
+      document.removeEventListener("visibilitychange", onVis);
       delete (window as unknown as { __armShowPlayback?: () => void }).__armShowPlayback;
     };
   }, []);
@@ -138,22 +48,12 @@ export function PersistentShowPlayer() {
   // follow the current view's slot every frame (cheap: dirty-checked writes)
   useEffect(() => {
     const el = boxRef.current;
-    const inner = innerRef.current;
-    const stage = document.getElementById("deck-stage");
-    if (!el || !inner || !stage) return;
+    if (!el) return;
     let raf = 0;
-    let drawn = { l: -1, t: -1, w: -1, h: -1, ix: -1, iy: -1, s: -1 };
-    // The player covers ONLY the on-screen-visible part of its slot, and the
-    // video FILLS that region (16:9 in a 16:9 tile -> no letterbox bars). The
-    // box is position:fixed in true screen coords, so its iframe is ALWAYS
-    // fully within the viewport no matter how far a tour beat pans the slot
-    // off-screen — and Twitch's viewability pause (which a VOD can't recover
-    // from) keys off the iframe's viewport intersection, so it never fires.
-    // The iframe itself never resizes (it stays BASE_W×BASE_H and is only
-    // transform-scaled), which is the other thing that would pause it.
+    let drawn = { l: -1, t: -1, w: -1, h: -1, clip: "" };
     const hide = () => {
       if (el.style.visibility !== "hidden") el.style.visibility = "hidden";
-      drawn = { l: -1, t: -1, w: -1, h: -1, ix: -1, iy: -1, s: -1 };
+      drawn = { l: -1, t: -1, w: -1, h: -1, clip: "" };
     };
     const tick = () => {
       raf = requestAnimationFrame(tick);
@@ -167,57 +67,58 @@ export function PersistentShowPlayer() {
         hide();
         return;
       }
-      // visible region = slot ∩ overflow/scroll ancestors ∩ viewport
-      let l = sr.left,
-        t = sr.top,
-        r = sr.right,
-        b = sr.bottom;
+      // box fills the slot exactly (object-fit:cover -> no bars). The slot's
+      // rect already includes any tour zoom/pan, so the video reads at the
+      // beat's scale automatically.
+      const l = sr.left;
+      const t = sr.top;
+      const w = sr.width;
+      const h = sr.height;
+      // clip to the slot's visible region (intersection with overflow/scroll
+      // ancestors + viewport) so a scrolled column or an off-screen pan can't
+      // let the video bleed over neighbouring panels. A <video> never pauses,
+      // so this is purely cosmetic.
+      let cl = sr.left,
+        ct = sr.top,
+        cr = sr.right,
+        cb = sr.bottom;
       let a = slot.parentElement;
       while (a && a !== document.body) {
         const cs = getComputedStyle(a);
         if (/(auto|scroll|hidden)/.test(cs.overflowY + cs.overflowX)) {
           const ar = a.getBoundingClientRect();
-          l = Math.max(l, ar.left);
-          t = Math.max(t, ar.top);
-          r = Math.min(r, ar.right);
-          b = Math.min(b, ar.bottom);
+          cl = Math.max(cl, ar.left);
+          ct = Math.max(ct, ar.top);
+          cr = Math.min(cr, ar.right);
+          cb = Math.min(cb, ar.bottom);
         }
         a = a.parentElement;
       }
-      l = Math.max(l, 0);
-      t = Math.max(t, 0);
-      r = Math.min(r, window.innerWidth);
-      b = Math.min(b, window.innerHeight);
-      const w = r - l;
-      const h = b - t;
-      if (w < 80 || h < 45) {
-        hide();
-        return;
-      }
-      // the video is scaled to the slot's full on-screen size (so it reads at
-      // the beat's zoom level), centered in the visible region, and the region
-      // clips the overflow. cover = the slot's current screen scale.
-      const cover = Math.max(sr.width / BASE_W, sr.height / BASE_H);
-      // center the iframe on the region's center (which is on-screen), NOT on
-      // the slot's center (which may be off-screen) — that's what keeps the
-      // iframe rect inside the viewport and playback alive.
-      const ix = w / 2;
-      const iy = h / 2;
+      cl = Math.max(cl, 0);
+      ct = Math.max(ct, 0);
+      cr = Math.min(cr, window.innerWidth);
+      cb = Math.min(cb, window.innerHeight);
+      const it = Math.max(0, ct - t);
+      const il = Math.max(0, cl - l);
+      const ib = Math.max(0, sr.bottom - cb);
+      const ir = Math.max(0, sr.right - cr);
+      const clip =
+        it + il + ib + ir < 0.5
+          ? "none"
+          : `inset(${it.toFixed(1)}px ${ir.toFixed(1)}px ${ib.toFixed(1)}px ${il.toFixed(1)}px round 12px)`;
       if (
         Math.abs(l - drawn.l) > 0.5 ||
         Math.abs(t - drawn.t) > 0.5 ||
         Math.abs(w - drawn.w) > 0.5 ||
         Math.abs(h - drawn.h) > 0.5 ||
-        Math.abs(cover - drawn.s) > 0.001
+        clip !== drawn.clip
       ) {
-        drawn = { l, t, w, h, ix, iy, s: cover };
+        drawn = { l, t, w, h, clip };
         el.style.left = `${l}px`;
         el.style.top = `${t}px`;
         el.style.width = `${w}px`;
         el.style.height = `${h}px`;
-        inner.style.left = `${ix}px`;
-        inner.style.top = `${iy}px`;
-        inner.style.transform = `translate(-50%, -50%) scale(${cover.toFixed(4)})`;
+        el.style.clipPath = clip;
       }
       if (el.style.visibility !== "visible") el.style.visibility = "visible";
     };
@@ -228,51 +129,27 @@ export function PersistentShowPlayer() {
   return (
     <div
       ref={boxRef}
-      className="overflow-hidden rounded-xl"
+      className="overflow-hidden rounded-xl bg-black"
       style={{
         position: "fixed",
         zIndex: 12,
         visibility: "hidden",
         left: 0,
         top: 0,
-        width: BASE_W,
-        height: BASE_H,
+        width: 0,
+        height: 0,
       }}
     >
-      <div
-        ref={innerRef}
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: BASE_W,
-          height: BASE_H,
-          transformOrigin: "center center",
-        }}
-      >
-        <div ref={mountRef} className="h-full w-full bg-black" />
-      </div>
-      {covered && (
-        <div
-          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl"
-          style={{
-            background: "radial-gradient(80% 70% at 50% 40%, #141210, #0a0a09 75%)",
-          }}
-        >
-          <span
-            className="h-12 w-12 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle at 38% 30%, #fefdfb, #ece3d0 34%, #bcab86 70%, #6f6450)",
-              boxShadow: "0 6px 26px rgba(233,225,209,.3)",
-            }}
-          />
-          <span className="font-serif text-[17px] font-semibold text-fg">
-            Market Bubble
-          </span>
-          <span className="eyebrow">Replay · tap to play</span>
-        </div>
-      )}
+      <video
+        ref={videoRef}
+        src={SHOW_SRC}
+        muted
+        autoPlay
+        loop
+        playsInline
+        preload="auto"
+        className="h-full w-full object-cover"
+      />
       <div className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 backdrop-blur">
         <span className="h-1.5 w-1.5 rounded-full bg-neg live-dot" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-neg">
