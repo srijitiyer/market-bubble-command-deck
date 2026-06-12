@@ -9,9 +9,27 @@ import { PlatformIcon } from "./icons";
 
 // The demo broadcast renders through PersistentShowPlayer (a singleton that
 // never unmounts, so playback survives view switches). Tiles just render a
-// slot the floating player follows.
+// slot the floating player follows; the brand card underneath only shows in
+// the rare moments the player parks itself (slot mostly off-viewport).
 function ShowReplay() {
-  return <div data-show-slot className="h-full w-full bg-black" />;
+  return (
+    <div
+      data-show-slot
+      className="flex h-full w-full flex-col items-center justify-center gap-2 bg-black"
+    >
+      <span
+        className="h-9 w-9 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 38% 30%, #fefdfb, #ece3d0 34%, #bcab86 70%, #6f6450)",
+          boxShadow: "0 4px 18px rgba(233,225,209,.25)",
+        }}
+      />
+      <span className="font-serif text-[15px] font-semibold text-fg">
+        Market Bubble
+      </span>
+    </div>
+  );
 }
 
 function StreamEmbed({

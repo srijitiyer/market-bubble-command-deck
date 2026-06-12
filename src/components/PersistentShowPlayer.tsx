@@ -155,12 +155,14 @@ export function PersistentShowPlayer() {
       el.style.left = `${px}px`;
       el.style.top = `${py}px`;
       el.style.transform = "scale(0.5, 0.5)";
-      el.style.clipPath = "none";
+      el.style.setProperty("-webkit-mask-image", "none");
+      el.style.setProperty("mask-image", "none");
       el.style.visibility = "hidden";
       drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
     };
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      if ((window as unknown as { __freezeBox?: boolean }).__freezeBox) return;
       const slot = document.querySelector("[data-show-slot]");
       if (!slot) {
         park();
@@ -169,14 +171,13 @@ export function PersistentShowPlayer() {
       const sr = slot.getBoundingClientRect();
       const st = stage.getBoundingClientRect();
       const scale = st.width / (stage as HTMLElement).offsetWidth || 1;
-      const x = (sr.left - st.left) / scale;
-      const y = (sr.top - st.top) / scale;
-      const w = sr.width / scale;
-      const h = sr.height / scale;
-      const sx = w / BASE_W;
-      const sy = h / BASE_H;
-      // clip to scrollable/overflow-hidden ancestors so a scrolled column
-      // doesn't let the video bleed over other panels
+      // The tile's VISIBLE region: slot rect intersected with scrollable /
+      // overflow-hidden ancestors and the viewport. The video is fitted
+      // whole into that region (a mini-player when the tile is sliced)
+      // rather than cropped to it: Twitch pauses a partially-visible embed
+      // at an unpredictable threshold and a paused VOD cannot be resumed
+      // from script, so the iframe must ALWAYS be fully on-viewport. An
+      // intact shrinking video also looks intentional; a cut one doesn't.
       let cl = sr.left,
         ct = sr.top,
         cr = sr.right,
@@ -193,40 +194,36 @@ export function PersistentShowPlayer() {
         }
         a = a.parentElement;
       }
-      // Park unless the slot is MEANINGFULLY visible (after ancestor clips +
-      // viewport). Twitch doesn't just pause a fully off-screen embed — below
-      // some visible-area threshold it pauses AND ignores play(), observed at
-      // ~7% visible. A mostly-clipped strip isn't worth a dead player, so the
-      // tile blanks below ~45% and the stream never stops.
-      const visW = Math.min(cr, window.innerWidth) - Math.max(cl, 0);
-      const visH = Math.min(cb, window.innerHeight) - Math.max(ct, 0);
-      const frac =
-        sr.width > 0 && sr.height > 0
-          ? (Math.max(0, visW) * Math.max(0, visH)) / (sr.width * sr.height)
-          : 0;
-      if (frac < 0.75) {
+      cl = Math.max(cl, 0);
+      ct = Math.max(ct, 0);
+      cr = Math.min(cr, window.innerWidth);
+      cb = Math.min(cb, window.innerHeight);
+      const vw = cr - cl;
+      const vh = cb - ct;
+      // too little room for a watchable mini-player -> park (stay playing)
+      if (vw < 200 || vh < 112) {
         park();
         return;
       }
-      // clip in the box's PRE-transform coordinate space (divide by sx/sy)
-      const it = Math.max(0, ct - sr.top) / scale / sy;
-      const il = Math.max(0, cl - sr.left) / scale / sx;
-      const ib = Math.max(0, sr.bottom - cb) / scale / sy;
-      const ir = Math.max(0, sr.right - cr) / scale / sx;
-      const round = 12 / Math.max(0.05, sx);
-      const clip = `inset(${it.toFixed(1)}px ${ir.toFixed(1)}px ${ib.toFixed(1)}px ${il.toFixed(1)}px round ${round.toFixed(1)}px)`;
+      // fit the whole 16:9 frame inside the visible region, centered
+      const fit = Math.min(vw / BASE_W, vh / BASE_H);
+      const bx = cl + (vw - BASE_W * fit) / 2;
+      const by = ct + (vh - BASE_H * fit) / 2;
+      const x = (bx - st.left) / scale;
+      const y = (by - st.top) / scale;
+      const sBox = fit / scale; // box is inside the zoomed stage
+      const w = BASE_W * fit;
+      const h = BASE_H * fit;
       if (
         Math.abs(x - drawn.x) > 0.5 ||
         Math.abs(y - drawn.y) > 0.5 ||
         Math.abs(w - drawn.w) > 0.5 ||
-        Math.abs(h - drawn.h) > 0.5 ||
-        clip !== drawn.clip
+        Math.abs(h - drawn.h) > 0.5
       ) {
-        drawn = { x, y, w, h, clip };
+        drawn = { x, y, w, h, clip: "" };
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
-        el.style.transform = `scale(${(sx || 0.001).toFixed(4)}, ${(sy || 0.001).toFixed(4)})`;
-        el.style.clipPath = clip;
+        el.style.transform = `scale(${(sBox || 0.001).toFixed(4)})`;
       }
       if (el.style.visibility !== "visible") el.style.visibility = "visible";
     };
@@ -246,6 +243,8 @@ export function PersistentShowPlayer() {
         width: BASE_W,
         height: BASE_H,
         transformOrigin: "0 0",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
       }}
     >
       <div ref={mountRef} className="h-full w-full overflow-hidden rounded-xl bg-black" />
