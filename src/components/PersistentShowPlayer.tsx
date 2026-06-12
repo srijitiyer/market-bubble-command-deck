@@ -141,43 +141,38 @@ export function PersistentShowPlayer() {
     if (!el || !stage) return;
     let raf = 0;
     let drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
-    // Twitch's embed pauses playback when its iframe leaves the viewport
-    // (pure geometry — visibility:hidden does NOT trigger it). The tour's
-    // zoom/pan regularly pushes the hero off-screen, so whenever the slot is
-    // effectively invisible the box parks HIDDEN at the viewport center
-    // instead of following the slot off-screen: the iframe's rect always
-    // intersects the viewport and playback never stops.
-    const park = () => {
-      const st = stage.getBoundingClientRect();
-      const scale = st.width / (stage as HTMLElement).offsetWidth || 1;
-      const px = (window.innerWidth / 2 - (BASE_W * scale) / 4 - st.left) / scale;
-      const py = (window.innerHeight / 2 - (BASE_H * scale) / 4 - st.top) / scale;
-      el.style.left = `${px}px`;
-      el.style.top = `${py}px`;
-      el.style.transform = "scale(0.5, 0.5)";
-      el.style.setProperty("-webkit-mask-image", "none");
-      el.style.setProperty("mask-image", "none");
-      el.style.visibility = "hidden";
+    // The player FILLS its slot exactly — a 16:9 video in the 16:9 tile, so it
+    // covers the whole thing with no letterbox bars, no shrinking, no centered
+    // mini-player. When a tour beat zooms past it the slot just slides under
+    // the viewport edge and the video is clipped there like any normal element
+    // would be. The only special case is when the slot is gone entirely (a
+    // section without a stream tile) — then the box hides.
+    const hide = () => {
+      if (el.style.visibility !== "hidden") el.style.visibility = "hidden";
       drawn = { x: -1, y: -1, w: -1, h: -1, clip: "" };
     };
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      if ((window as unknown as { __freezeBox?: boolean }).__freezeBox) return;
       const slot = document.querySelector("[data-show-slot]");
       if (!slot) {
-        park();
+        hide();
         return;
       }
       const sr = slot.getBoundingClientRect();
+      if (sr.width < 1 || sr.height < 1) {
+        hide();
+        return;
+      }
       const st = stage.getBoundingClientRect();
       const scale = st.width / (stage as HTMLElement).offsetWidth || 1;
-      // The tile's VISIBLE region: slot rect intersected with scrollable /
-      // overflow-hidden ancestors and the viewport. The video is fitted
-      // whole into that region (a mini-player when the tile is sliced)
-      // rather than cropped to it: Twitch pauses a partially-visible embed
-      // at an unpredictable threshold and a paused VOD cannot be resumed
-      // from script, so the iframe must ALWAYS be fully on-viewport. An
-      // intact shrinking video also looks intentional; a cut one doesn't.
+      // box fills the slot exactly (slot is 16:9, video is 16:9 -> no bars)
+      const x = (sr.left - st.left) / scale;
+      const y = (sr.top - st.top) / scale;
+      const sx = sr.width / scale / BASE_W;
+      const sy = sr.height / scale / BASE_H;
+      // mask to the slot's visible region (intersection with overflow/scroll
+      // ancestors) so a scrolled column can't let the video bleed over its
+      // neighbours — paint-only, it never moves the iframe, so playback holds
       let cl = sr.left,
         ct = sr.top,
         cr = sr.right,
@@ -194,36 +189,28 @@ export function PersistentShowPlayer() {
         }
         a = a.parentElement;
       }
-      cl = Math.max(cl, 0);
-      ct = Math.max(ct, 0);
-      cr = Math.min(cr, window.innerWidth);
-      cb = Math.min(cb, window.innerHeight);
-      const vw = cr - cl;
-      const vh = cb - ct;
-      // too little room for a watchable mini-player -> park (stay playing)
-      if (vw < 200 || vh < 112) {
-        park();
-        return;
-      }
-      // fit the whole 16:9 frame inside the visible region, centered
-      const fit = Math.min(vw / BASE_W, vh / BASE_H);
-      const bx = cl + (vw - BASE_W * fit) / 2;
-      const by = ct + (vh - BASE_H * fit) / 2;
-      const x = (bx - st.left) / scale;
-      const y = (by - st.top) / scale;
-      const sBox = fit / scale; // box is inside the zoomed stage
-      const w = BASE_W * fit;
-      const h = BASE_H * fit;
+      const it = Math.max(0, ct - sr.top) / scale / sy;
+      const il = Math.max(0, cl - sr.left) / scale / sx;
+      const ib = Math.max(0, sr.bottom - cb) / scale / sy;
+      const ir = Math.max(0, sr.right - cr) / scale / sx;
+      const clip =
+        it + il + ib + ir < 0.5
+          ? "none"
+          : `inset(${it.toFixed(1)}px ${ir.toFixed(1)}px ${ib.toFixed(1)}px ${il.toFixed(1)}px)`;
+      const w = sr.width;
+      const h = sr.height;
       if (
         Math.abs(x - drawn.x) > 0.5 ||
         Math.abs(y - drawn.y) > 0.5 ||
         Math.abs(w - drawn.w) > 0.5 ||
-        Math.abs(h - drawn.h) > 0.5
+        Math.abs(h - drawn.h) > 0.5 ||
+        clip !== drawn.clip
       ) {
-        drawn = { x, y, w, h, clip: "" };
+        drawn = { x, y, w, h, clip };
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
-        el.style.transform = `scale(${(sBox || 0.001).toFixed(4)})`;
+        el.style.transform = `scale(${(sx || 0.001).toFixed(4)}, ${(sy || 0.001).toFixed(4)})`;
+        el.style.clipPath = clip;
       }
       if (el.style.visibility !== "visible") el.style.visibility = "visible";
     };

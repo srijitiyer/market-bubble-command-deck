@@ -339,7 +339,7 @@ export function DemoTour() {
         : [];
       const dot = dots[3] || dots[0];
       if (dot) {
-        await zoomTo(dot, 1.45); // center the action, not the container
+        await zoomTo(dot, 1.22); // gentle — keep the hero on-screen and playing
         await moveToEl(dot);
         hover(dot);
         await sleep(2600);
@@ -380,7 +380,7 @@ export function DemoTour() {
           if (Math.abs(r.top - prev.top) < 1 && Math.abs(r.left - prev.left) < 1) break;
           prev = r;
         }
-        await zoomTo(chip, 1.35);
+        await zoomTo(chip, 1.14); // gentle — keep the hero on-screen and playing
         await moveToEl(chip);
         await moveToEl(chip); // re-measure once more; no-op unless it drifted
         hover(chip);
@@ -399,7 +399,7 @@ export function DemoTour() {
         'input[aria-label="Broadcast to the shared chat"]',
       ) as HTMLInputElement | null;
       if (composer) {
-        await zoomTo(composer, 1.38); // center the action, not the container
+        await zoomTo(composer, 1.14); // gentle — keep the hero on-screen and playing
         await moveToEl(composer);
         await typeInto(composer, "gm degens, we are SO back");
         await sleep(300);
@@ -433,7 +433,7 @@ export function DemoTour() {
       const odds = q('[data-tour="odds"]');
       await bring(odds);
       if (odds) {
-        await zoomTo(odds, 1.4);
+        await zoomTo(odds, 1.14); // gentle — keep the hero on-screen and playing
         await moveToEl(odds);
         await sleep(2500);
         await zoomReset();
